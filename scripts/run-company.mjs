@@ -36,7 +36,10 @@ const configPath = args.find((a) => !a.startsWith("--")) ?? "scripts/example-com
 const config = JSON.parse(readFileSync(resolve(repoRoot, configPath), "utf8"));
 
 const BASE = config.baseUrl ?? "http://localhost:3000";
-const PROVIDERS = config.providers ?? ["chatgpt", "perplexity", "google_ai"];
+const PROVIDERS = config.providers ?? ["chatgpt", "google_ai"];
+// ISO-2 country (e.g. "ES") geo-targets the scrape; without it Bright Data answers
+// from a random exit country, so local results come back localised elsewhere.
+const COUNTRY = config.country ? String(config.country).toUpperCase() : undefined;
 const STORAGE_KEY = "sovereign-aeo-tracker-v1"; // default workspace
 
 const brandName = config.brand.name;
@@ -95,7 +98,7 @@ const runs = await Promise.all(jobs.map(async ({ prompt, provider }) => {
     const res = await fetch(`${BASE}/api/scrape`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, prompt }),
+      body: JSON.stringify({ provider, prompt, ...(COUNTRY ? { country: COUNTRY } : {}) }),
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`);

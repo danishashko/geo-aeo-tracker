@@ -80,6 +80,7 @@ def build_tracker_doc(c: dict) -> dict:
                          "websites": [x["domain"]] if x.get("domain") else []} for x in comps],
         "industry": c["vertical"],          # short tag; prompts carry the context
         "providers": c["engines"],
+        "country": c["country"],          # ISO-2, geo-targets each scrape
         "baseUrl": AEO_BASE,
         "prompts": [p["text"] for p in (c["prompts"] or [])],
     }

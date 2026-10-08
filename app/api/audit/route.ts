@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { assertPublicHttpUrl } from "@/lib/server/ssrf";
+import { AI_CRAWLERS, isAllowed, parseRobots } from "@/lib/server/robots";
 
 export const runtime = "nodejs";
 
@@ -109,48 +110,51 @@ export async function POST(req: NextRequest) {
         : "No llms-full.txt found. This extended file provides detailed context for AI models.",
     });
 
-    // 3. robots.txt ‑ AI bot access
-    const aiBots = [
-      "gptbot",
-      "chatgpt-user",
-      "claudebot",
-      "anthropic-ai",
-      "google-extended",
-      "googleother",
-      "cohere-ai",
-      "bytespider",
-      "perplexitybot",
-      "ccbot",
-    ];
-    const blockedBots: string[] = [];
-    const allowedBots: string[] = [];
-    if (robotsRes.ok) {
-      for (const bot of aiBots) {
-        const botPattern = new RegExp(
-          `user-agent:\\s*${bot}[\\s\\S]*?disallow:\\s*/`,
-          "i",
-        );
-        if (botPattern.test(robotsRes.text)) {
-          blockedBots.push(bot);
-        } else {
-          allowedBots.push(bot);
-        }
-      }
-    }
-    const botAccessOk = robotsRes.ok && blockedBots.length <= 2;
+    // 3. robots.txt - AI crawler access for this page's path
+    // Per RFC 9309 a 4xx robots.txt means "no restrictions"; a 5xx or network
+    // failure leaves access unknown, so we report it instead of guessing.
+    const robotsMissing = robotsRes.status >= 400 && robotsRes.status < 500;
+    const robotsReadable = robotsRes.ok || robotsMissing;
+    const robotsGroups = robotsRes.ok ? parseRobots(robotsRes.text) : [];
+    const pagePath = `${target.pathname}${target.search}`;
+    const blockedCrawlers = AI_CRAWLERS.filter(
+      (c) => robotsReadable && !isAllowed(robotsGroups, c.token, pagePath),
+    );
+    const blockedAnswer = blockedCrawlers.filter((c) => c.purpose === "answers");
+    const blockedTraining = blockedCrawlers.filter(
+      (c) => c.purpose === "training",
+    );
+    const answerCrawlerCount = AI_CRAWLERS.filter(
+      (c) => c.purpose === "answers",
+    ).length;
     checks.push({
       id: "robots_ai_access",
-      label: "AI Bot Access (robots.txt)",
+      label: "AI Crawler Access (robots.txt)",
       category: "discovery",
-      pass: botAccessOk,
-      value: robotsRes.ok
-        ? `${blockedBots.length} blocked / ${aiBots.length} checked`
-        : "No robots.txt",
-      detail: robotsRes.ok
-        ? blockedBots.length > 0
-          ? `Blocked: ${blockedBots.join(", ")}. Allowed: ${allowedBots.slice(0, 5).join(", ")}${allowedBots.length > 5 ? "\u2026" : ""}`
-          : "All major AI bots are allowed to crawl."
-        : "No robots.txt found \u2014 AI bots will default to crawling all pages.",
+      // Only answer-engine crawlers decide whether this page can appear in AI
+      // answers; blocking training-only crawlers is a legitimate opt-out.
+      pass: robotsReadable && blockedAnswer.length === 0,
+      value: !robotsReadable
+        ? `Unreadable (${robotsRes.status || "network error"})`
+        : blockedAnswer.length > 0
+          ? `${blockedAnswer.length} of ${answerCrawlerCount} answer crawlers blocked`
+          : robotsMissing
+            ? "No robots.txt (all allowed)"
+            : "All answer crawlers allowed",
+      detail: !robotsReadable
+        ? `Could not read ${target.origin}/robots.txt. Crawlers treat an unreachable robots.txt as “do not crawl”, so fix this first.`
+        : [
+            blockedAnswer.length > 0
+              ? `Blocked for ${pagePath}: ${blockedAnswer.map((c) => `${c.token} (${c.powers})`).join(", ")}. This page cannot appear in those engines’ answers.`
+              : robotsMissing
+                ? "No robots.txt found — every AI crawler may crawl this page."
+                : `Every answer-engine crawler (ChatGPT, Perplexity, Claude, Google, Copilot) may crawl ${pagePath}.`,
+            blockedTraining.length > 0
+              ? `Training-only crawlers blocked (does not affect AI answers): ${blockedTraining.map((c) => c.token).join(", ")}.`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
     });
 
     // 4. Sitemap

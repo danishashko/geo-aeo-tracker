@@ -313,7 +313,7 @@ const DEMO_SRO_RESULT: SROState = {
       "No explicit price-per-serving comparison vs GreenPlate on the page",
     ],
     competitorInsights: [
-      "GreenPlate is cited on 5/6 platforms for this query, mostly via Wirecutter and its organic-menu page",
+      "GreenPlate is cited on 4/5 platforms for this query, mostly via Wirecutter and its organic-menu page",
       "Hearthbox wins 'cheapest meal kit' prompts through Reddit threads",
       "Wirecutter's roundup is the single most-cited source — table-stakes to appear in it",
     ],

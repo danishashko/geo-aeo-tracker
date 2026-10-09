@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { DriftAlert, ScheduleInterval } from "@/components/dashboard/types";
-import { PROVIDER_LABELS, SCHEDULE_OPTIONS, type Provider } from "@/components/dashboard/types";
+import { PROVIDER_LABELS, SCHEDULE_OPTIONS } from "@/components/dashboard/types";
 
 type AutomationTabProps = {
   scheduleEnabled: boolean;

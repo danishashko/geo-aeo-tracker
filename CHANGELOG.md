@@ -4,7 +4,7 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
-## [Unreleased]
+## [1.5.1] — 2026-10-09
 
 ### 🐛 Fix: AEO Audit's AI crawler check now reads robots.txt correctly
 
@@ -18,6 +18,10 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 - README, in-app docs, banner and SRO demo copy said "6 AI models"; they now say 5. The docs no longer describe the Google AI engine as "AI Overview / SGE" (it scrapes AI Mode).
 - `npm run test:scraper` dropped Grok and now falls back to the public dataset IDs, so it runs with just `BRIGHT_DATA_KEY` like the app does.
+
+### 🧹 Maintenance
+
+- `npm run lint` is back to 0 warnings: removed unused imports and made `demoMode` an explicit dependency of the workspace-loading and scheduler effects (no behaviour change; it never changes after mount).
 
 ---
 

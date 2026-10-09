@@ -4,6 +4,23 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fix: AEO Audit's AI crawler check now reads robots.txt correctly
+
+- The old check used one regex per bot and got common files wrong: an `Allow: /` for GPTBot followed by any `Disallow: /something` in another group reported GPTBot as blocked, a site-wide `User-agent: *` / `Disallow: /` reported every bot as allowed, and a missing robots.txt failed the check even though it means "crawl everything".
+- Replaced with an RFC 9309 parser (`lib/server/robots.ts`): per-agent groups with `*` fallback, longest match with Allow winning ties, `*` and `$` wildcards. It checks the audited page's own path, not just `/`.
+- Crawlers are split by what blocking them costs. The check fails only when an **answer-engine** crawler is blocked (OAI-SearchBot, ChatGPT-User, PerplexityBot, Perplexity-User, Claude-SearchBot, Claude-User, Googlebot, Google-Extended, Bingbot). Training-only crawlers (GPTBot, ClaudeBot, Applebot-Extended, Meta-ExternalAgent, CCBot, Bytespider) are listed but don't fail it, since opting out of training doesn't remove you from AI answers. Dropped the retired `anthropic-ai` token.
+- An unreachable robots.txt (5xx / network error) is now reported as such instead of guessed at.
+- Added `npm test` with unit tests for the parser (Node's built-in test runner, no new dependencies).
+
+### 📝 Engine count cleanup after the Grok removal
+
+- README, in-app docs, banner and SRO demo copy said "6 AI models"; they now say 5. The docs no longer describe the Google AI engine as "AI Overview / SGE" (it scrapes AI Mode).
+- `npm run test:scraper` dropped Grok and now falls back to the public dataset IDs, so it runs with just `BRIGHT_DATA_KEY` like the app does.
+
+---
+
 ## [1.5.0] — 2026-08-12
 
 ### ⚙️ Every environment variable is now optional

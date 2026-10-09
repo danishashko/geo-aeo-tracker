@@ -12,7 +12,7 @@
 
 <p align="center">
   Open-source, local-first AI visibility intelligence dashboard.<br/>
-  Track your brand across <strong>6 AI models</strong> with zero vendor lock-in.<br/>
+  Track your brand across <strong>5 AI engines</strong> with zero vendor lock-in.<br/>
   Now with <strong>SRO Analysis</strong> — deep cross-platform search result optimization.<br/>
   <strong>Mobile-responsive</strong> — works seamlessly on desktop, tablet, and phone.
 </p>
@@ -28,7 +28,7 @@
 ---
 
 > 🌐 **Built with [Bright Data](https://brightdata.com/?utm_source=geo-tracker-os)** — the world's leading web data platform.
-> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 6 AI models.
+> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 5 AI engines.
 > [Get your API key →](https://brightdata.com/?utm_source=geo-tracker-os)
 
 ---
@@ -42,7 +42,7 @@ Existing tools charge **$200–$500+/month**, lock you into closed ecosystems, a
 **GEO/AEO Tracker** is the alternative:
 
 - 🔑 **BYOK** (Bring Your Own Keys): your data never leaves your machine
-- 🤖 **6 AI models** simultaneously: more coverage than paid tools
+- 🤖 **5 AI engines** simultaneously: more coverage than paid tools
 - 💸 **$0/month**: self-hosted, open-source, forever free
 - 🛡️ **Local-first** by default: IndexedDB + localStorage, no external database
 - ☁️ **Optional cloud sync** via your own Supabase project (free tier) for multi-device access
@@ -62,7 +62,7 @@ Existing tools charge **$200–$500+/month**, lock you into closed ecosystems, a
 | 🔗 **Citations** | Domain-grouped citation frequency analysis |
 | 🎯 **Citation Opportunities** | URLs where competitors get cited but you don't, with outreach briefs |
 | ⚔️ **Competitor Battlecards** | AI-generated side-by-side competitor analysis with strengths/weaknesses |
-| 🏥 **AEO Audit** | Site readiness check: llms.txt, Schema.org, BLUF density, heading structure |
+| 🏥 **AEO Audit** | Site readiness check: llms.txt, AI crawler access (robots.txt), Schema.org, BLUF density, heading structure |
 | 📡 **SRO Analysis** | 6-stage deep pipeline: Gemini Grounding → Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis. Produces SRO Score (0–100), prioritized recommendations, content gaps & competitor insights |
 | ⏱️ **Automation** | Cron / GitHub Actions templates for scheduled runs |
 | 📖 **Documentation** | Searchable 18-section guide covering every feature |
@@ -96,7 +96,7 @@ Next.js 16.1 + Turbopack
 │       ├── serp/route.ts           # Bright Data SERP results
 │       ├── site-context/route.ts   # Homepage context extraction
 │       ├── unlocker/route.ts       # Bright Data Web Unlocker (single/batch)
-│       ├── brightdata-platforms/   # 6-platform AI citation polling
+│       ├── brightdata-platforms/   # 5-platform AI citation polling
 │       ├── bulk-sro/route.ts       # SSE bulk SRO analysis
 │       └── state/route.ts          # Cloud KV store (GET/PUT/DELETE — Node runtime)
 ├── components/
@@ -112,7 +112,7 @@ Next.js 16.1 + Turbopack
 │   │   ├── supabase.ts             # Server-side Supabase singleton (service_role)
 │   │   ├── kv-store.ts             # kvGet / kvSet / kvDelete helpers
 │   │   ├── brightdata-scraper.ts   # Bright Data AI Scraper integration
-│   │   ├── brightdata-platforms.ts # 6-platform citation scraper
+│   │   ├── brightdata-platforms.ts # 5-platform citation scraper
 │   │   ├── gemini-grounding.ts     # Gemini Grounding via Google Search
 │   │   ├── openrouter-sro.ts       # SRO analysis via OpenRouter
 │   │   ├── serp.ts                 # SERP data via Bright Data
@@ -182,6 +182,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ### Validate Setup
 
 ```bash
+npm test                # Unit tests (robots.txt parser)
 npm run test:scraper    # Test Bright Data API connection
 npm run build           # Full production build check
 npm run lint            # ESLint
@@ -260,7 +261,7 @@ By default, **all your data stays in your browser** (IndexedDB). That's great fo
 | `POST /api/serp` | Node.js | Bright Data SERP — organic search results for a keyword |
 | `POST /api/site-context` | Node.js | Homepage scrape + context extraction via OpenRouter |
 | `POST /api/unlocker` | Node.js | Bright Data Web Unlocker — single or batch URL scraping |
-| `POST /api/brightdata-platforms` | Node.js | 6-platform AI citation polling via Bright Data datasets |
+| `POST /api/brightdata-platforms` | Node.js | 5-platform AI citation polling via Bright Data datasets |
 | `POST /api/bulk-sro` | Node.js | SSE streaming — bulk SRO analysis across multiple keywords |
 | `GET/PUT/DELETE /api/state` | Node.js | Cloud KV store proxy — reads/writes to Supabase using service-role key (disabled when cloud not configured) |
 

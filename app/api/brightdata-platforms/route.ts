@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { scrapeAllPlatforms, scrapePlatform, PLATFORMS } from "@/lib/server/brightdata-platforms";
 
+export const maxDuration = 300;
+
 const allSchema = z.object({
-  keyword: z.string().min(1),
+  keyword: z.string().min(1).max(200),
   targetUrl: z.string().url(),
 });
 
 const singleSchema = z.object({
-  keyword: z.string().min(1),
+  keyword: z.string().min(1).max(200),
   targetUrl: z.string().url(),
   platformId: z.string(),
 });

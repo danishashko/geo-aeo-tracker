@@ -11,6 +11,7 @@ import { posterior, verdict } from "@/lib/shared/rank-signal-stats";
 import {
   loadSovereignValue,
   saveSovereignValue,
+  CloudSyncError,
 } from "@/lib/client/sovereign-store";
 import { readSse } from "@/lib/client/sse";
 
@@ -405,7 +406,13 @@ export function RankSignalPanel({
     const next = [result, ...resultsRef.current].slice(0, MAX_STORED_RESULTS);
     resultsRef.current = next;
     setResults(next);
-    await saveSovereignValue(RESULTS_KEY, { results: next });
+    try {
+      await saveSovereignValue(RESULTS_KEY, { results: next });
+    } catch (err) {
+      // Saved locally; only the cloud copy failed.
+      if (!(err instanceof CloudSyncError)) throw err;
+      setNotice("Saved on this device. Cloud sync failed.");
+    }
   }, []);
 
   const run = useCallback(async () => {
@@ -439,6 +446,7 @@ export function RankSignalPanel({
       .map(page);
     let spent = 0;
 
+    try {
     for (const signalId of order) {
       const remaining = Math.round((capUsd - spent) * 10_000) / 10_000;
       if (remaining < 0.01) {
@@ -531,10 +539,15 @@ export function RankSignalPanel({
         }
       }
 
-      if (ac.signal.aborted) {
+      // No signal_done and no error event means the stream was cut off.
+      const cutOff = !outcome.done && !outcome.error;
+      if (ac.signal.aborted || cutOff) {
         partial.finishedAt = new Date().toISOString();
         spent += partial.costUsd;
         await persist(partial);
+        if (!ac.signal.aborted) {
+          setNotice("The run stopped early. Partial results were saved.");
+        }
         break;
       }
       if (outcome.error) {
@@ -550,9 +563,15 @@ export function RankSignalPanel({
     const ex = { runId: id, examples: runExamples };
     setExamples(ex);
     await saveSovereignValue(EXAMPLES_KEY, ex);
-    abortRef.current = null;
-    setLive(null);
-    setRunning(false);
+    } catch (err) {
+      if (!(err instanceof CloudSyncError)) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    } finally {
+      abortRef.current = null;
+      setLive(null);
+      setRunning(false);
+    }
   }, [
     capUsd,
     competitorPages,

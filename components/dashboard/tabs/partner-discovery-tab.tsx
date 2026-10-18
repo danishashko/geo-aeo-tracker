@@ -115,7 +115,7 @@ export function PartnerDiscoveryTab({ partnerLeaderboard, brandWebsites = [] }: 
     <div className="space-y-3">
       {/* ── Header row: stats + controls ── */}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-center gap-5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <Stat label="Domains" value={domainGroups.length} />
           <Stat label="Citations" value={totalCitations} />
           <Stat label="URLs" value={partnerLeaderboard.length} />
@@ -183,7 +183,7 @@ export function PartnerDiscoveryTab({ partnerLeaderboard, brandWebsites = [] }: 
       {/* ── Table ── */}
       <div className="rounded-lg border border-th-border overflow-hidden">
         {/* Column headers */}
-        <div className="grid grid-cols-[1fr_64px_64px_64px] gap-2 bg-th-card px-4 py-2 text-xs font-medium uppercase tracking-wider text-th-text-muted border-b border-th-border">
+        <div className="grid grid-cols-[1fr_44px_44px_56px] sm:grid-cols-[1fr_64px_64px_64px] gap-2 bg-th-card px-4 py-2 text-[10px] sm:text-xs font-medium uppercase tracking-normal sm:tracking-wider text-th-text-muted border-b border-th-border">
           <span>{view === "domain" ? "Source" : "URL"}</span>
           <span className="text-right">Cited</span>
           <span className="text-right">{view === "domain" ? "Pages" : ""}</span>
@@ -201,7 +201,7 @@ export function PartnerDiscoveryTab({ partnerLeaderboard, brandWebsites = [] }: 
                       onClick={() =>
                         setExpandedDomains((prev) => ({ ...prev, [item.domain]: !prev[item.domain] }))
                       }
-                      className={`grid w-full grid-cols-[1fr_64px_64px_64px] gap-2 items-center px-4 py-2.5 text-left transition-colors hover:bg-th-card-hover ${isOpen ? "bg-th-card-hover/50" : idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
+                      className={`grid w-full grid-cols-[1fr_44px_44px_56px] sm:grid-cols-[1fr_64px_64px_64px] gap-2 items-center px-4 py-2.5 text-left transition-colors hover:bg-th-card-hover ${isOpen ? "bg-th-card-hover/50" : idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-xs text-th-text-muted">{isOpen ? "▾" : "▸"}</span>
@@ -223,7 +223,7 @@ export function PartnerDiscoveryTab({ partnerLeaderboard, brandWebsites = [] }: 
                         {[...new Set(item.urls)].map((url) => {
                           const entry = partnerLeaderboard.find((e) => e.url === url);
                           return (
-                            <div key={url} className="grid grid-cols-[1fr_64px_64px_64px] gap-2 items-center px-4 py-2 pl-10 border-b border-th-border/30 last:border-b-0">
+                            <div key={url} className="grid grid-cols-[1fr_44px_44px_56px] sm:grid-cols-[1fr_64px_64px_64px] gap-2 items-center px-4 py-2 pl-10 border-b border-th-border/30 last:border-b-0">
                               <a
                                 href={url}
                                 target="_blank"
@@ -265,7 +265,7 @@ export function PartnerDiscoveryTab({ partnerLeaderboard, brandWebsites = [] }: 
             : (filtered as typeof partnerLeaderboard).map((item, idx) => (
                 <div
                   key={item.url}
-                  className={`grid grid-cols-[1fr_64px_64px_64px] gap-2 items-center px-4 py-2.5 ${idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
+                  className={`grid grid-cols-[1fr_44px_44px_56px] sm:grid-cols-[1fr_64px_64px_64px] gap-2 items-center px-4 py-2.5 ${idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="shrink-0 text-xs text-th-text-muted">{extractDomain(item.url)}</span>

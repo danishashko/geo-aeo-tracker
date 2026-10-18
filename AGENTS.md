@@ -15,7 +15,7 @@ npm run dev              # http://localhost:3000
 | `npm run dev` | Next dev server (Turbopack) | No. An empty env shows the demo dataset |
 | `npm run build` | Production build | No. `NEXT_PUBLIC_*` vars are inlined here |
 | `npm run start` | Serve the production build | No |
-| `npm test` | `tsx --test "lib/**/*.test.ts"` (Node test runner) | No, offline |
+| `npm test` | `tsx --test "lib/**/*.test.ts"` (Node test runner, about 140 tests across `lib/`, `lib/client`, `lib/server` and `lib/shared`) | No, offline |
 | `npm run lint` | ESLint (`eslint.config.mjs`, next core-web-vitals + typescript) | No. Currently 0 errors, 8 warnings |
 | `npm run test:pillar -- 8` | Checks that the files for a pillar number (1 to 8) exist | No, offline |
 | `npm run test:scraper` | One live Bright Data AI-scraper call | Yes, bills Bright Data |
@@ -57,12 +57,13 @@ Never commit `.env`. `.gitignore` excludes `.env*` except `.env.example`.
 - `lib/demo-data.ts`: the sample dataset used in demo mode.
 - `supabase/migrations/001_kv_store.sql`: the single `kv_store` table for cloud sync.
 - `scripts/`: the two plain-Node scripts behind `test:scraper` and `test:pillar`.
-- `proxy.ts`: IP rate limiting on `/api/*`, plus markdown negotiation and Link headers on `/` and `/demo` for demo deploys.
+- `proxy.ts`: IP rate limiting on `/api/*`, plus markdown negotiation and Link headers on `/` and `/demo` for demo deploys. On demo deploys (`NEXT_PUBLIC_DEMO_ONLY=true`) every `/api/*` request gets a 403 before any route runs.
+- `lib/shared/`: pure code used by client and server (`rank-signal-stats.ts`, `strip-markdown.ts`). `lib/server/rank-signal*.ts`: the Rank Signal pipeline behind `app/api/rank-signal/route.ts`.
 - `lib/agent-discovery.ts`: single source for `robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt` and `/index.md`. Served only when `NEXT_PUBLIC_DEMO_ONLY=true`; private deploys get `Disallow: /` and 404s. Edit the copy here, never in the route files.
 
 ### API routes
 
-All routes are unauthenticated except `state`. Limits are requests per IP per path per minute from `proxy.ts`. Paths not listed there get 30.
+All routes are unauthenticated except `state`. Limits are requests per IP per path per minute from `proxy.ts`. Paths not listed there get 30. The client IP is `x-vercel-forwarded-for`, then `x-real-ip`, then the last `x-forwarded-for` hop. On demo deploys none of these routes answer (403).
 
 | File | Method | Purpose | Limit | Bills |
 |---|---|---|---|---|
@@ -70,10 +71,11 @@ All routes are unauthenticated except `state`. Limits are requests per IP per pa
 | `app/api/brightdata-platforms/route.ts` | POST | Query all engines, or one platform, for a keyword | 12 | Bright Data |
 | `app/api/bulk-sro/route.ts` | POST | Full SRO pipeline, streamed as server-sent events | 4 | Every vendor |
 | `app/api/sro-analyze/route.ts` | POST | SRO scoring from prior stage output | 20 | OpenRouter |
-| `app/api/analyze/route.ts` | POST | Generic LLM prompt (scoring, battlecards), `maxDuration` 120 | 30 | OpenRouter |
+| `app/api/analyze/route.ts` | POST | Generic LLM prompt (scoring, battlecards), `maxDuration` 120. A client `model` is ignored unless it equals `OPENROUTER_MODEL` or the code default. Prompt capped at 20,000 chars, `maxTokens` at 2000 | 30 | OpenRouter |
 | `app/api/site-context/route.ts` | POST | Scrape a site and summarize its context | 30 | Bright Data, OpenRouter |
 | `app/api/serp/route.ts` | POST | Google SERP for a keyword | 30 | Bright Data |
-| `app/api/unlocker/route.ts` | POST | Fetch one URL, or up to 10, through Web Unlocker | 30 | Bright Data |
+| `app/api/unlocker/route.ts` | POST | Fetch one URL, or up to 5, through Web Unlocker. Every URL passes `assertPublicHttpUrl` | 30 | Bright Data |
+| `app/api/rank-signal/route.ts` | GET, POST | Rank Signal paired A/B trials for one signal, streamed as server-sent events. GET lists signals and allowed judge models. `maxDuration` 300 | 6 | OpenRouter, Bright Data |
 | `app/api/audit/route.ts` | POST | AEO page audit, fetches the page directly | 30 | Nothing |
 | `app/api/state/route.ts` | GET, PUT, DELETE | Cloud KV sync, needs the `x-sync-secret` header | 30 | Supabase |
 
@@ -116,8 +118,8 @@ Grok was removed in v1.5.0 because its Bright Data scraper never completes (`CHA
 
 - `scripts/test-scraper.js` still lists a Grok engine and only goes live when a `BRIGHT_DATA_DATASET_*` var is set. Dataset IDs now have defaults in code, so with only `BRIGHT_DATA_KEY` set it prints a mock result.
 - `npm run test:scraper` uses `node --env-file=.env`, so it exits with "node: .env: not found" when no `.env` exists.
-- `NEXT_PUBLIC_DEMO_ONLY` only changes what `app/page.tsx` renders. The API routes stay live, and with keys present on a demo deploy they still bill the deployer. The only guard is `proxy.ts`.
-- `proxy.ts` keeps its counters in process memory. On serverless each instance counts alone, so the limit stops bursts and nothing more.
+- `NEXT_PUBLIC_DEMO_ONLY` changes what `app/page.tsx` renders, and `proxy.ts` answers 403 to every `/api/*` request on such a deploy, so keys on a demo deploy are never used. The flag is inlined at build, so changing it needs a rebuild.
+- `proxy.ts` keeps its counters in process memory. Off Vercel a client can still send its own `x-real-ip` when no proxy overwrites it, so the limit is best-effort. On serverless each instance counts alone, so the limit stops bursts and nothing more.
 - `scripts/*.js` is excluded from ESLint in `eslint.config.mjs`.
 - `lib/server/brightdata-scraper.ts` waits 90 seconds and follows a `snapshot_id` handoff. Keep that timeout, since Gemini and Copilot need it.
 - `app/api/bulk-sro/route.ts` streams `text/event-stream`. Keep the response shape when editing it.

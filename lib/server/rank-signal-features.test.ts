@@ -273,3 +273,21 @@ test("no-op pairs are rejected after normalisation", () => {
     { ok: true },
   );
 });
+
+test("S06 date skip: words that merely start with a month do not count", () => {
+  const s06 = sig("S06");
+  for (const word of ["market 2024", "decision 2023", "Marketing 2025", "Decision 2022"]) {
+    assert.equal(
+      isEligible(s06, `${BASE} The ${word} review was short.`, ctx),
+      true,
+      word,
+    );
+  }
+  for (const date of ["March 2024", "Mar 2024", "Sept. 2023", "Sep 2023", "May 2026", "March 5, 2024", "dec 2021"]) {
+    assert.equal(
+      isEligible(s06, `${BASE} Updated ${date}.`, ctx),
+      false,
+      date,
+    );
+  }
+});

@@ -14,17 +14,18 @@ import type {
 } from "@/lib/server/sro-types";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 const requestSchema = z.object({
   items: z
     .array(
       z.object({
         url: z.string().url(),
-        keyword: z.string().min(1),
+        keyword: z.string().min(1).max(200),
       }),
     )
     .min(1)
-    .max(20),
+    .max(5),
 });
 
 function sseEvent(type: string, data: unknown): string {
@@ -53,6 +54,8 @@ export async function POST(req: NextRequest) {
     cancelled = true;
   });
 
+  const isStopped = () => cancelled || req.signal.aborted;
+
   const stream = new ReadableStream({
     async start(controller) {
       let closed = false;
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest) {
       send("start", { total: items.length });
 
       for (let i = 0; i < items.length; i++) {
-        if (cancelled || req.signal.aborted) break;
+        if (isStopped()) break;
         const item = items[i];
         const progress = (stage: BulkItemProgress["stage"], error?: string) => {
           const p: BulkItemProgress = {
@@ -90,6 +93,7 @@ export async function POST(req: NextRequest) {
             // Gemini grounding is optional
           }
 
+          if (isStopped()) break;
           progress("platforms");
           let platforms: PlatformResult[] = [];
           try {
@@ -98,6 +102,7 @@ export async function POST(req: NextRequest) {
             // Platforms optional
           }
 
+          if (isStopped()) break;
           progress("serp");
           let serp = null;
           try {
@@ -106,6 +111,7 @@ export async function POST(req: NextRequest) {
             // SERP optional
           }
 
+          if (isStopped()) break;
           progress("scraping");
           let targetPage = null;
           let competitorPages: ScrapedPage[] = [];
@@ -115,7 +121,7 @@ export async function POST(req: NextRequest) {
             // Target page scrape optional
           }
 
-          if (serp && serp.topCompetitors.length > 0) {
+          if (!isStopped() && serp && serp.topCompetitors.length > 0) {
             try {
               competitorPages = await scrapePages(
                 serp.topCompetitors.slice(0, 3),
@@ -125,6 +131,7 @@ export async function POST(req: NextRequest) {
             }
           }
 
+          if (isStopped()) break;
           progress("analyzing");
           let llmAnalysis = null;
           try {
@@ -161,7 +168,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      if (!cancelled && !req.signal.aborted)
+      if (!isStopped())
         send("complete", { total: items.length });
       if (!closed) {
         try {

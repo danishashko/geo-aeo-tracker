@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { ScrapeRun } from "@/components/dashboard/types";
 import { ALL_PROVIDERS, PROVIDER_LABELS, type Provider } from "@/components/dashboard/types";
 import type { RunDelta } from "@/components/dashboard/types";
+import { stripMarkdown } from "@/lib/shared/strip-markdown";
 
 type ReputationSourcesTabProps = {
   runs: ScrapeRun[];
@@ -41,7 +42,7 @@ function normalizeAnswerForDisplay(answer: string): string {
     }
   }
 
-  return text
+  return stripMarkdown(text)
     .replace(/\r\n?/g, "\n")
     .replace(/```[\s\S]*?```/g, (block) => block.replace(/```/g, ""))
     .replace(/<br\s*\/?\s*>/gi, "\n")

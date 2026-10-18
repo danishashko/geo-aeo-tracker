@@ -10,6 +10,11 @@ import { LINK_HEADER, isDemoDeploy, wantsMarkdown } from "@/lib/agent-discovery"
  * the deployer's bill. This is in-memory (per instance on serverless, not a
  * global counter) — it stops bursts, not a determined distributed attacker. For
  * hard guarantees, front it with a shared store (Upstash, Vercel KV).
+ *
+ * The client IP comes from headers a platform sets (x-vercel-forwarded-for,
+ * x-real-ip) before the client-controlled x-forwarded-for. Off Vercel, a client
+ * can still send its own x-real-ip if no proxy overwrites it, so treat the
+ * limit as best-effort.
  */
 
 type Bucket = { count: number; resetAt: number };
@@ -44,13 +49,24 @@ export function proxy(req: NextRequest) {
     return res;
   }
 
+  // Public demo deploy: never reach a paid route (the deployer's keys would bill).
+  if (isDemoDeploy()) {
+    return NextResponse.json(
+      { error: "Live API calls are disabled on this demo." },
+      { status: 403 },
+    );
+  }
+
   const rule = LIMITS[path] ?? DEFAULT_LIMIT;
 
-  const ip = (
-    req.headers.get("x-forwarded-for")?.split(",")[0] ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  ).trim();
+  // The first x-forwarded-for entry is client-supplied and spoofable; the last
+  // one is appended by the nearest proxy.
+  const xff = req.headers.get("x-forwarded-for")?.split(",").pop()?.trim();
+  const ip =
+    req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip")?.trim() ||
+    xff ||
+    "unknown";
   const key = `${ip}:${path}`;
   const now = Date.now();
 

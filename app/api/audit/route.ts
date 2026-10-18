@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { fetchWithTimeout } from "@/lib/server/http";
 import { assertPublicHttpUrl } from "@/lib/server/ssrf";
 
 export const runtime = "nodejs";
@@ -26,6 +27,24 @@ type Check = {
   detail: string;
 };
 
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+
+/** Read a response body as text, stopping after MAX_BODY_BYTES. */
+async function readCapped(res: Response): Promise<string> {
+  if (!res.body) return "";
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (total < MAX_BODY_BYTES) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    total += value.byteLength;
+  }
+  await reader.cancel().catch(() => {});
+  return Buffer.concat(chunks).subarray(0, MAX_BODY_BYTES).toString("utf8");
+}
+
 async function tryFetch(
   url: string,
 ): Promise<{ ok: boolean; text: string; status: number }> {
@@ -35,18 +54,22 @@ async function tryFetch(
     // that 30x-redirects to an internal address must not slip past the SSRF guard.
     for (let hop = 0; hop < 4; hop++) {
       await assertPublicHttpUrl(current);
-      const res = await fetch(current, {
-        headers: { "User-Agent": "GEO-AEO-Tracker/1.0" },
-        cache: "no-store",
-        redirect: "manual",
-      });
+      const res = await fetchWithTimeout(
+        current,
+        {
+          headers: { "User-Agent": "GEO-AEO-Tracker/1.0" },
+          cache: "no-store",
+          redirect: "manual",
+        },
+        15_000,
+      );
       if (res.status >= 300 && res.status < 400) {
         const loc = res.headers.get("location");
         if (!loc) return { ok: false, text: "", status: res.status };
         current = new URL(loc, current).toString();
         continue;
       }
-      const text = res.ok ? await res.text() : "";
+      const text = res.ok ? await readCapped(res) : "";
       return { ok: res.ok, text, status: res.status };
     }
     return { ok: false, text: "", status: 0 }; // too many redirects

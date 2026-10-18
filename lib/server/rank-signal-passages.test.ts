@@ -417,3 +417,79 @@ test("expandPool leaves a pool of 40+ alone and survives a failed SERP", async (
   assert.equal(r2.passages.length, 10);
   assert.equal(calls, 3, "empty SERP is tried 3 times");
 });
+
+test("expandPool negative-caches an empty SERP for later signals of the run", async () => {
+  resetExpansionCache();
+  let serpCalls = 0;
+  const deps = {
+    fetchSerp: async () => {
+      serpCalls++;
+      return serpOf([], "");
+    },
+    scrapePages: async () => [],
+  };
+  const input = {
+    keyword: "k",
+    targetUrl: "https://t.example/",
+    passages: [],
+    knownUrls: [],
+  };
+  await expandPool(input, deps);
+  assert.equal(serpCalls, 3, "first expansion retries up to 3 times");
+  for (let i = 0; i < 14; i++) await expandPool(input, deps);
+  assert.equal(serpCalls, 3, "the other signals reuse the failed result");
+});
+
+test("expandPool negative-caches a throwing SERP, but not an aborted one", async () => {
+  resetExpansionCache();
+  let serpCalls = 0;
+  const input = {
+    keyword: "k2",
+    targetUrl: "https://t.example/",
+    passages: [],
+    knownUrls: [],
+  };
+  const failing = {
+    fetchSerp: async () => {
+      serpCalls++;
+      throw new Error("boom");
+    },
+  };
+  await expandPool(input, failing);
+  await expandPool(input, failing);
+  assert.equal(serpCalls, 1);
+
+  resetExpansionCache();
+  serpCalls = 0;
+  const ac = new AbortController();
+  const aborting = {
+    signal: ac.signal,
+    fetchSerp: async () => {
+      serpCalls++;
+      ac.abort();
+      throw new Error("aborted");
+    },
+  };
+  await expandPool(input, aborting);
+  await new Promise((r) => setTimeout(r, 0));
+  await expandPool(input, { fetchSerp: async () => { serpCalls++; return serpOf([], ""); } });
+  assert.equal(serpCalls, 4, "an aborted expansion is not cached (1 + 3 retries)");
+});
+
+test("expandPool stops retrying and scraping once the signal aborts", async () => {
+  resetExpansionCache();
+  const ac = new AbortController();
+  let serpCalls = 0;
+  await expandPool(
+    { keyword: "k3", targetUrl: "https://t.example/", passages: [], knownUrls: [] },
+    {
+      signal: ac.signal,
+      fetchSerp: async () => {
+        serpCalls++;
+        ac.abort();
+        return serpOf([], "");
+      },
+    },
+  );
+  assert.equal(serpCalls, 1);
+});

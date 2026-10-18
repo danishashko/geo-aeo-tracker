@@ -10,6 +10,7 @@ import type {
 } from "@/lib/server/sro-types";
 
 export const runtime = "nodejs";
+export const maxDuration = 120;
 
 // These come from prior pipeline stages, so the shapes are large and varied.
 // We don't re-validate every field, but we DO require objects (not arbitrary

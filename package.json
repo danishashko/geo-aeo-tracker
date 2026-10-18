@@ -15,7 +15,7 @@
     "@google/genai": "^1.44.0",
     "@supabase/supabase-js": "^2.103.3",
     "idb-keyval": "^6.2.2",
-    "next": "^16.2.9",
+    "next": "^16.4.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",

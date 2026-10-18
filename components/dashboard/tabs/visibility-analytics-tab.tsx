@@ -216,7 +216,7 @@ export function VisibilityAnalyticsTab({
         </div>
       ) : (
         <div className="h-80 w-full rounded-lg border border-th-border bg-th-card-alt p-2">
-          <ResponsiveContainer>
+          <ResponsiveContainer minHeight={200} initialDimension={{ width: 320, height: 320 }}>
             <LineChart data={data}>
               <CartesianGrid
                 stroke="var(--th-chart-grid)"

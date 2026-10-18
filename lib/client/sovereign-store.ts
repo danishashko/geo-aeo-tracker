@@ -111,26 +111,15 @@ export async function loadSovereignValue<T>(
   return fallback;
 }
 
-/**
- * Save state.
- *
- * Cloud mode: write to /api/state. Also mirror to IDB so we have a local
- *   cache for offline / fast reloads.
- * Local mode: IDB primary, localStorage best-effort cache.
- */
-export async function saveSovereignValue<T>(
-  key: string,
-  value: T,
-): Promise<void> {
-  if (isCloudActive()) {
-    // Cloud is source of truth — await it so errors surface to the caller.
-    await cloudPut(key, value);
-    // Best-effort local mirror for offline reads
-    set(key, value).catch(() => {});
-    return;
+/** Thrown by saveSovereignValue when the data is saved locally but the cloud write failed. */
+export class CloudSyncError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "CloudSyncError";
   }
+}
 
-  // Local mode (original behavior)
+async function writeLocal<T>(key: string, value: T): Promise<void> {
   await set(key, value);
 
   try {
@@ -143,6 +132,35 @@ export async function saveSovereignValue<T>(
       /* ignore */
     }
   }
+}
+
+/**
+ * Save state.
+ *
+ * Always writes the local copy first (IDB primary, localStorage best-effort).
+ * Cloud mode then pushes to /api/state. If that fails the data is still saved
+ * locally and a CloudSyncError is thrown so the caller can show a notice.
+ */
+export async function saveSovereignValue<T>(
+  key: string,
+  value: T,
+): Promise<void> {
+  if (isCloudActive()) {
+    // Local first: a missing secret or a Supabase outage must not lose the save.
+    await writeLocal(key, value).catch(() => {});
+    try {
+      await cloudPut(key, value);
+    } catch (err) {
+      throw new CloudSyncError(
+        err instanceof Error ? err.message : "cloud save failed",
+        { cause: err },
+      );
+    }
+    return;
+  }
+
+  // Local mode (original behavior)
+  await writeLocal(key, value);
 }
 
 export async function clearSovereignStore(key: string): Promise<void> {

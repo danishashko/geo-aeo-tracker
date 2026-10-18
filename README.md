@@ -85,7 +85,7 @@ GEO/AEO Tracker is the better pick when you want:
 | 🎯 **Citation Opportunities** | URLs where competitors get cited but you don't, with outreach briefs |
 | ⚔️ **Competitor Battlecards** | AI-generated side-by-side competitor analysis with strengths/weaknesses |
 | 🏥 **AEO Audit** | Site readiness check: llms.txt, Schema.org, BLUF density, heading structure |
-| 📡 **SRO Analysis** | 6-stage deep pipeline: Gemini Grounding → Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis. Produces SRO Score (0–100), prioritized recommendations, content gaps & competitor insights |
+| 📡 **SRO Analysis** | Deep pipeline: Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis (Gemini Grounding runs in the `bulk-sro` API). Produces SRO Score (0–100), prioritized recommendations, content gaps & competitor insights |
 | ⏱️ **Automation** | Cron / GitHub Actions templates for scheduled runs |
 | 📖 **Documentation** | Searchable 18-section guide covering every feature |
 
@@ -93,12 +93,12 @@ GEO/AEO Tracker is the better pick when you want:
 
 - 🤖 **Multi-model tracking** across ChatGPT, Perplexity, Gemini, Copilot, and Google AI Mode
 - 🌍 **Geo-scoped tracking**: run visibility checks by country and compare markets, with a "visibility by country" breakdown
-- � **SRO Analysis**: 6-stage pipeline scoring how well your page is optimized for AI search results
+- � **SRO Analysis**: multi-stage pipeline scoring how well your page is optimized for AI search results
 - 🧪 **Rank Signal**: paired A/B tests inside the SRO tab that measure whether one text feature (a number, a named source, a freshness clause, …) changes which passage a model picks
 - 📈 **Visibility scoring** (0–100): brand mentions, position, frequency, citations, sentiment
 - 🔔 **Drift alerts**: automatic notifications when your score changes significantly
 - ⏰ **Scheduled auto-runs**: configurable interval-based batch scraping
-- 🚀 **Fully parallel batch runs**: all prompt × provider combos execute simultaneously
+- 🚀 **Batch runs**: every prompt × engine combo, 4 at a time to stay inside the rate limit
 - 📅 **Historical comparison**: delta tracking across time periods
 - 🏢 **Multi-workspace**: manage multiple brands/projects independently
 - 🎨 **Dark/light/system** theme with a polished sidebar UI
@@ -194,7 +194,7 @@ cp .env.example .env
 
 - **`BRIGHT_DATA_KEY`** — unlocks live AI-engine tracking. This is the one that matters: with no key the dashboard loads the sample dataset and tells you so in a banner. Add it and the same dashboard goes live.
 - **`OPENROUTER_KEY`** — powers LLM analysis (`/api/analyze`, `/api/sro-analyze`, `/api/site-context`). Without it, scraping still works and the analysis panels report that they are not configured. Model override via `OPENROUTER_MODEL` (default `google/gemini-3.5-flash`).
-- **`GEMINI_API_KEY`** — **separate from OpenRouter.** It powers only the Gemini *grounding* stage, which uses Google Search grounding to see which pages Gemini actually cites in real time. OpenRouter can't do that, which is why it is its own key. Missing key skips that one stage; the rest of the SRO pipeline runs.
+- **`GEMINI_API_KEY`** — **separate from OpenRouter.** It powers only the Gemini *grounding* stage of the `bulk-sro` API, which uses Google Search grounding to see which pages Gemini actually cites in real time. OpenRouter can't do that, which is why it is its own key. Missing key skips that one stage; the rest of the SRO pipeline runs.
 - **`BRIGHT_DATA_DATASET_*`** — **you don't need these.** The app ships with Bright Data's public AI-Scraper dataset ID for every engine. Set one only to point an engine at a custom or private dataset from the [Scrapers Library](https://brightdata.com/cp/scrapers).
 - **`BRIGHT_DATA_SERP_ZONE`** / **`BRIGHT_DATA_UNLOCKER_ZONE`** — zone **names** for the SRO pipeline. They default to `serp_api1` and `web_unlocker1`, the names Bright Data's own docs use, so most accounts work untouched. Set them if you named your zones differently.
 - **`RANK_SIGNAL_JUDGE_MODEL`** / **`RANK_SIGNAL_REWRITE_MODEL`** — Rank Signal's judge (default `google/gemini-3.6-flash`) and pair builder (default `OPENROUTER_MODEL`, then `google/gemini-3.5-flash`). Both must be in **`RANK_SIGNAL_ALLOWED_MODELS`** (comma list, defaults to those two) and in the route's price table. **`RANK_SIGNAL_MAX_USD_PER_HOUR`** (default `10`) caps server-side spend per instance; it is in-memory, so a stranger can use it up and lock you out until the hour resets, and the per-IP limit trusts `x-forwarded-for`. Put auth and a shared store (Upstash / Vercel KV) in front for hard limits.

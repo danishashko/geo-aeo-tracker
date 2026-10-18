@@ -190,7 +190,7 @@ export function AutomationTab({
               return (
                 <div
                   key={alert.id}
-                  className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${
+                  className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5 ${
                     alert.dismissed
                       ? "border-th-border bg-th-card-alt opacity-60"
                       : up
@@ -201,11 +201,11 @@ export function AutomationTab({
                   <span className={`text-xl font-bold ${up ? "text-th-success" : "text-th-danger"}`}>
                     {up ? "↑" : "↓"}{Math.abs(alert.delta)}
                   </span>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 basis-40">
                     <div className="truncate text-sm font-medium text-th-text">
                       {alert.prompt.length > 80 ? alert.prompt.slice(0, 77) + "…" : alert.prompt}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-th-text-muted">
+                    <div className="flex flex-wrap items-center gap-x-2 text-xs text-th-text-muted [&>span]:whitespace-nowrap">
                       <span>{PROVIDER_LABELS[alert.provider]}</span>
                       <span>·</span>
                       <span>{alert.oldScore} → {alert.newScore}</span>

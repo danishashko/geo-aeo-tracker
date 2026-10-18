@@ -12,7 +12,14 @@ import {
   loadSovereignValue,
   saveSovereignValue,
   clearSovereignStore,
+  CloudSyncError,
 } from "@/lib/client/sovereign-store";
+import {
+  calcVisibilityScore,
+  detectSentiment,
+  findMentions,
+} from "@/lib/scoring";
+import { retryAfterMs, runPool } from "@/lib/pool";
 import { DEMO_STATE } from "@/lib/demo-data";
 import { AeoAuditTab } from "@/components/dashboard/tabs/aeo-audit-tab";
 import { AutomationTab } from "@/components/dashboard/tabs/automation-tab-v2";
@@ -291,6 +298,21 @@ const tabMeta: Record<
   },
 };
 
+/** Save; a cloud failure still leaves the local copy, so show a notice instead of failing. */
+function saveWithNotice(
+  key: string,
+  value: AppState,
+  notify: (msg: string) => void,
+) {
+  return saveSovereignValue(key, value).catch((err) => {
+    if (err instanceof CloudSyncError) {
+      notify(
+        "Saved on this device. Cloud sync failed, check your sync secret.",
+      );
+    }
+  });
+}
+
 export function SovereignDashboard({
   demoMode = false,
   demoReason = "explicit",
@@ -458,7 +480,7 @@ export function SovereignDashboard({
     const wsId = activeWsId;
     const snapshot = state;
     saveTimerRef.current = setTimeout(() => {
-      saveSovereignValue(storageKeyForWorkspace(wsId), snapshot);
+      saveWithNotice(storageKeyForWorkspace(wsId), snapshot, setMessage);
     }, 600);
     // Update workspace brandName if changed
     if (state.brand.brandName) {
@@ -605,7 +627,7 @@ export function SovereignDashboard({
       return;
     }
     // Save current state first
-    saveSovereignValue(storageKeyForWorkspace(activeWsId), state);
+    saveWithNotice(storageKeyForWorkspace(activeWsId), state, setMessage);
     setActiveWsId(wsId);
     localStorage.setItem(ACTIVE_WS_KEY, wsId);
     setShowWsPicker(false);
@@ -614,7 +636,7 @@ export function SovereignDashboard({
     );
   }
 
-  function createWorkspace(name: string) {
+  async function createWorkspace(name: string) {
     if (demoMode) {
       setMessage("Demo mode — workspaces are read-only");
       return;
@@ -628,11 +650,14 @@ export function SovereignDashboard({
     setWorkspaces(updated);
     localStorage.setItem(WORKSPACES_KEY, JSON.stringify(updated));
     // Save current, switch to new
-    saveSovereignValue(storageKeyForWorkspace(activeWsId), state);
-    setState({
+    saveWithNotice(storageKeyForWorkspace(activeWsId), state, setMessage);
+    // Seed the new workspace so the load effect finds the brand name.
+    const seeded: AppState = {
       ...defaultState,
       brand: { ...defaultState.brand, brandName: name },
-    });
+    };
+    await saveWithNotice(storageKeyForWorkspace(ws.id), seeded, setMessage);
+    setState(seeded);
     setActiveWsId(ws.id);
     localStorage.setItem(ACTIVE_WS_KEY, ws.id);
     setShowWsPicker(false);
@@ -857,129 +882,6 @@ export function SovereignDashboard({
       .filter(Boolean);
   }
 
-  /** Find which terms appear in text (case-insensitive) */
-  function findMentions(text: string, terms: string[]): string[] {
-    const lower = text.toLowerCase();
-    return terms.filter((t) => lower.includes(t.toLowerCase()));
-  }
-
-  /** Detect basic sentiment toward brand in answer */
-  function detectSentiment(
-    answer: string,
-    brandTerms: string[],
-  ): "positive" | "neutral" | "negative" | "not-mentioned" {
-    if (brandTerms.length === 0) return "not-mentioned";
-    const lower = answer.toLowerCase();
-    const mentioned = brandTerms.some((t) => lower.includes(t.toLowerCase()));
-    if (!mentioned) return "not-mentioned";
-
-    const positiveWords = [
-      "best",
-      "leading",
-      "top",
-      "excellent",
-      "recommend",
-      "great",
-      "outstanding",
-      "innovative",
-      "trusted",
-      "powerful",
-      "superior",
-      "preferred",
-      "popular",
-      "reliable",
-      "impressive",
-      "standout",
-      "strong",
-      "ideal",
-    ];
-    const negativeWords = [
-      "worst",
-      "poor",
-      "bad",
-      "avoid",
-      "lacking",
-      "weak",
-      "inferior",
-      "disappointing",
-      "overpriced",
-      "limited",
-      "outdated",
-      "risky",
-      "problematic",
-      "concern",
-      "drawback",
-      "downside",
-    ];
-
-    let posScore = 0;
-    let negScore = 0;
-    positiveWords.forEach((w) => {
-      if (lower.includes(w)) posScore++;
-    });
-    negativeWords.forEach((w) => {
-      if (lower.includes(w)) negScore++;
-    });
-
-    if (posScore > negScore + 1) return "positive";
-    if (negScore > posScore + 1) return "negative";
-    return "neutral";
-  }
-
-  /** Calculate 0-100 visibility score */
-  function calcVisibilityScore(
-    answer: string,
-    sources: string[],
-    brandTerms: string[],
-  ): number {
-    if (brandTerms.length === 0) return 0;
-    const lower = answer.toLowerCase();
-    let score = 0;
-
-    // Brand mentioned at all? +30
-    const mentioned = brandTerms.some((t) => lower.includes(t.toLowerCase()));
-    if (!mentioned) return 0;
-    score += 30;
-
-    // Mentioned in first 200 chars (prominent position)? +20
-    const first200 = lower.slice(0, 200);
-    if (brandTerms.some((t) => first200.includes(t.toLowerCase()))) score += 20;
-
-    // Multiple mentions? +15
-    const mentionCount = brandTerms.reduce((acc, t) => {
-      const re = new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-      return acc + (lower.match(re)?.length ?? 0);
-    }, 0);
-    if (mentionCount >= 3) score += 15;
-    else if (mentionCount >= 2) score += 8;
-
-    // Brand website in sources? +20
-    const websiteDomains = state.brand.websites
-      .map((w) =>
-        w
-          .replace(/^https?:\/\//, "")
-          .replace(/\/.*$/, "")
-          .toLowerCase(),
-      )
-      .filter(Boolean);
-    if (
-      websiteDomains.length > 0 &&
-      sources.some((s) => {
-        const sl = s.toLowerCase();
-        return websiteDomains.some((d) => sl.includes(d));
-      })
-    ) {
-      score += 20;
-    }
-
-    // Positive sentiment bonus +15
-    const sent = detectSentiment(answer, brandTerms);
-    if (sent === "positive") score += 15;
-    else if (sent === "neutral") score += 5;
-
-    return Math.min(100, score);
-  }
-
   /** Run a single scrape against one specific provider */
   async function callScrapeOne(
     prompt: string,
@@ -990,16 +892,25 @@ export function SovereignDashboard({
       return null;
     }
     try {
-      const response = await fetch("/api/scrape", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider,
-          prompt,
-          requireSources: true,
-          country: state.country,
-        }),
-      });
+      const scrape = () =>
+        fetch("/api/scrape", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider,
+            prompt,
+            requireSources: true,
+            country: state.country,
+          }),
+        });
+      let response = await scrape();
+      if (response.status === 429) {
+        // Rate limited: wait the server's Retry-After (max 60s) and try once more.
+        await new Promise((r) =>
+          setTimeout(r, retryAfterMs(response.headers.get("Retry-After"))),
+        );
+        response = await scrape();
+      }
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Scrape request failed");
@@ -1019,6 +930,7 @@ export function SovereignDashboard({
           answerText,
           sourceList,
           brandTerms,
+          state.brand.websites,
         ),
         sentiment: detectSentiment(answerText, brandTerms),
         brandMentions: findMentions(answerText, brandTerms),
@@ -1077,7 +989,7 @@ export function SovereignDashboard({
     }
   }
 
-  /** Batch run all custom prompts across all active providers — fully parallel */
+  /** Batch run all custom prompts across all active providers, 4 at a time */
   async function batchRunAllPrompts() {
     const prompts = state.customPrompts.map((p) =>
       p.text.replace(/\{brand\}/gi, state.brand.brandName || "our brand"),
@@ -1092,13 +1004,19 @@ export function SovereignDashboard({
         : [state.provider];
     const totalJobs = prompts.length * providers.length;
     setBusy(true);
-    setMessage(`Batch: launching ${totalJobs} jobs in parallel...`);
+    setMessage(`Batch: running ${totalJobs} jobs, 4 at a time...`);
 
-    // Fire ALL prompt × provider combinations at once
+    // 4 at a time keeps us under the /api/scrape rate limit
     const jobs = prompts.flatMap((prompt) =>
-      providers.map((p) => callScrapeOne(prompt, p)),
+      providers.map((p) => [prompt, p] as const),
     );
-    const results = await Promise.allSettled(jobs);
+    let done = 0;
+    const results = await runPool(jobs, 4, async ([prompt, p]) => {
+      const run = await callScrapeOne(prompt, p);
+      done++;
+      setMessage(`Batch: ${done}/${totalJobs} done...`);
+      return run;
+    });
 
     const allRuns: ScrapeRun[] = [];
     let failed = 0;
@@ -1928,8 +1846,8 @@ ${exampleJson}`,
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-th-accent" />
             <span>
               {demoReason === "no-key"
-                ? "Sample data — add BRIGHT_DATA_KEY to your environment to track live AI engines"
-                : "Read-only demo — sample data, live API calls disabled"}
+                ? "Demo data. Changes are not saved. Add BRIGHT_DATA_KEY to your environment to track live AI engines"
+                : "Demo data. Changes are not saved and live API calls are off"}
             </span>
           </div>
         )}
@@ -2203,9 +2121,11 @@ ${exampleJson}`,
           )}
 
           {/* Active tab panel */}
-          <section className="rounded-xl border border-th-border bg-th-card p-5 shadow-sm">
-            {renderActiveTab()}
-          </section>
+          {activeTab !== "SRO Analysis" && (
+            <section className="rounded-xl border border-th-border bg-th-card p-5 shadow-sm">
+              {renderActiveTab()}
+            </section>
+          )}
           {/* SRO Analysis stays mounted to preserve in-flight state */}
           <div className={activeTab === "SRO Analysis" ? "" : "hidden"}>
             <section className="rounded-xl border border-th-border bg-th-card p-5 shadow-sm">

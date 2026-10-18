@@ -110,12 +110,16 @@ export async function analyzeGrounding(
     }
   }
 
+  const countWords = (text: string) => {
+    const trimmed = text.trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+  };
   const totalGroundingWords = supports.reduce(
-    (sum, s) => sum + (s.text?.split(/\s+/).length ?? 0),
+    (sum, s) => sum + countWords(s.text ?? ""),
     0,
   );
   const targetGroundingWords = targetSnippets.reduce(
-    (sum, s) => sum + s.split(/\s+/).length,
+    (sum, s) => sum + countWords(s),
     0,
   );
 

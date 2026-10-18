@@ -36,6 +36,36 @@ test("siteOrigin priority: explicit, Vercel, localhost", () => {
   assert.equal(siteOrigin({}), "http://localhost:3000");
 });
 
+test("siteOrigin normalizes a scheme-less or malformed NEXT_PUBLIC_SITE_URL", () => {
+  assert.equal(
+    siteOrigin({ NEXT_PUBLIC_SITE_URL: "mytracker.example.com" }),
+    "https://mytracker.example.com",
+  );
+  assert.equal(
+    siteOrigin({ NEXT_PUBLIC_SITE_URL: "mytracker.example.com//" }),
+    "https://mytracker.example.com",
+  );
+  assert.equal(
+    siteOrigin({ NEXT_PUBLIC_SITE_URL: "http://localhost:4000/" }),
+    "http://localhost:4000",
+  );
+  assert.equal(
+    siteOrigin({ NEXT_PUBLIC_SITE_URL: "https://" }),
+    "http://localhost:3000",
+  );
+  assert.equal(
+    siteOrigin({ NEXT_PUBLIC_SITE_URL: "ftp://files.example" }),
+    "http://localhost:3000",
+  );
+});
+
+test("llms-full lists /api/rank-signal and Rank Signal", () => {
+  const txt = llmsFullTxt(ORIGIN);
+  assert.match(txt, /POST \/api\/rank-signal/);
+  assert.match(txt, /Rank Signal: paired A\/B tests/);
+  assert.match(llmsTxt(ORIGIN), /\/api\/rank-signal\/route\.ts/);
+});
+
 test("robots: demo allows AI bots, adds Content-Signal and sitemap", () => {
   const txt = robotsTxt(true, ORIGIN);
   for (const bot of [

@@ -362,17 +362,29 @@ export const POOL_TARGET = 40;
 export const POOL_MAX = 60;
 const SERP_TOP = 10;
 const EXPANSION_TTL_MS = 30 * 60 * 1000;
+// A failed or empty expansion is remembered this long, so the signals of one
+// run do not each retry up to 3 SERP calls.
+const EXPANSION_FAILED_TTL_MS = 10 * 60 * 1000;
 
 export interface ExpandDeps {
-  fetchSerp?: (keyword: string, targetUrl: string) => Promise<SerpResult>;
-  scrapePages?: (urls: string[]) => Promise<ScrapedPage[]>;
+  fetchSerp?: (
+    keyword: string,
+    targetUrl: string,
+    signal?: AbortSignal,
+  ) => Promise<SerpResult>;
+  scrapePages?: (
+    urls: string[],
+    signal?: AbortSignal,
+  ) => Promise<ScrapedPage[]>;
+  /** Request abort signal: Stop cancels the remaining SERP and scrape calls. */
+  signal?: AbortSignal;
 }
 
 // One SERP call + one scrape per (keyword, target, known pages), reused by
 // every signal of a run. In-memory per instance, like the spend ledger.
 const expansionCache = new Map<
   string,
-  { at: number; pages: Promise<ScrapedPage[]> }
+  { at: number; pages: Promise<ScrapedPage[]>; failed?: boolean }
 >();
 
 /** Test helper. */
@@ -398,13 +410,22 @@ async function serpExpansionPages(
   known: Set<string>,
   deps: ExpandDeps,
 ): Promise<ScrapedPage[]> {
-  const serpFn = deps.fetchSerp ?? fetchSerp;
-  const scrapeFn = deps.scrapePages ?? scrapePages;
+  // fetchSerp and scrapePages take no signal yet; the extra argument is ignored
+  // by them and honoured by injected deps.
+  const serpFn: NonNullable<ExpandDeps["fetchSerp"]> =
+    deps.fetchSerp ?? fetchSerp;
+  const scrapeFn: NonNullable<ExpandDeps["scrapePages"]> =
+    deps.scrapePages ?? scrapePages;
   // The SERP API regularly returns an unparsable body or times out
   // (measured: 4 of 11 calls on 2026-09-25): up to 3 attempts.
-  let serp = await serpFn(keyword, targetUrl);
-  for (let i = 0; i < 2 && serp.organicResults.length === 0; i++)
-    serp = await serpFn(keyword, targetUrl);
+  const signal = deps.signal;
+  let serp = await serpFn(keyword, targetUrl, signal);
+  for (
+    let i = 0;
+    i < 2 && serp.organicResults.length === 0 && !signal?.aborted;
+    i++
+  )
+    serp = await serpFn(keyword, targetUrl, signal);
   const urls = serp.organicResults
     .slice(0, SERP_TOP)
     .filter((r) => !r.isTarget && /^https?:\/\//.test(r.url))
@@ -413,7 +434,8 @@ async function serpExpansionPages(
   const pages: ScrapedPage[] = [];
   // scrapePages handles at most 5 URLs per call
   for (let i = 0; i < urls.length; i += 5) {
-    pages.push(...(await scrapeFn(urls.slice(i, i + 5))));
+    if (signal?.aborted) throw new Error("aborted");
+    pages.push(...(await scrapeFn(urls.slice(i, i + 5), signal)));
   }
   return pages;
 }
@@ -442,21 +464,34 @@ export async function expandPool(
   const key = [input.keyword, ...[...known].sort()].join("|");
   const now = Date.now();
   let entry = expansionCache.get(key);
-  if (!entry || entry.at < now - EXPANSION_TTL_MS) {
-    entry = {
+  const ttl = entry?.failed ? EXPANSION_FAILED_TTL_MS : EXPANSION_TTL_MS;
+  if (!entry || entry.at < now - ttl) {
+    const created = {
       at: now,
       pages: serpExpansionPages(input.keyword, input.targetUrl, known, deps),
+      failed: false,
     };
+    // Empty and failed expansions stay cached (shorter TTL) instead of being
+    // retried by every signal. An aborted one is dropped: it says nothing
+    // about the SERP.
+    created.pages
+      .then((p) => {
+        if (p.length === 0) created.failed = true;
+      })
+      .catch(() => {
+        if (deps.signal?.aborted) {
+          if (expansionCache.get(key) === created) expansionCache.delete(key);
+        } else created.failed = true;
+      });
+    entry = created;
     expansionCache.set(key, entry);
   }
   let pages: ScrapedPage[];
   try {
     pages = await entry.pages;
   } catch {
-    expansionCache.delete(key);
     return { passages: base, added: 0 };
   }
-  if (pages.length === 0) expansionCache.delete(key);
 
   const seen = new Set(base.map((p) => p.hash));
   const extra: Passage[] = [];

@@ -419,7 +419,6 @@ function CategoryBadge({
 
 function ProgressBar({ stage }: { stage: AnalysisStage }) {
   const stages: AnalysisStage[] = [
-    "grounding",
     "platforms",
     "serp",
     "scraping",
@@ -441,6 +440,7 @@ function ProgressBar({ stage }: { stage: AnalysisStage }) {
         <span>{STAGE_LABELS[stage]}</span>
         <span>{pct}%</span>
       </div>
+      <div className="text-xs text-th-text-muted">Gemini Grounding: skipped</div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-th-card-alt">
         <div
           className="h-full rounded-full transition-all duration-500"
@@ -465,13 +465,15 @@ export function SROAnalysisTab({
   const isRunning = !["idle", "done", "error"].includes(s.stage);
 
   const runFullAnalysis = useCallback(async () => {
+    if (demoMode) return;
     if (!s.targetUrl || !s.keyword) return;
 
+    const previous = s;
     setS((prev) => ({
       ...INITIAL,
       targetUrl: prev.targetUrl,
       keyword: prev.keyword,
-      stage: "grounding",
+      stage: "platforms",
     }));
 
     const grounding: GroundingResult | null = null;
@@ -483,26 +485,6 @@ export function SROAnalysisTab({
     let llmAnalysis: LLMAnalysisResult | null = null;
 
     try {
-      // 1. Gemini Grounding
-      try {
-        const resp = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: `Analyze the Gemini grounding for "${s.keyword}" targeting ${s.targetUrl}. Call the /api/sro-analyze endpoint on the server side.`,
-            maxTokens: 256,
-          }),
-        });
-        // Actually call the dedicated grounding endpoint if available,
-        // but since there's no grounding API route (Gemini runs server-side only),
-        // we skip grounding on the client and let the final SRO analysis handle it.
-        // For now we'll try the grounding via the bulk proxy or skip gracefully.
-        void resp;
-      } catch {
-        // Grounding is optional
-      }
-      setS((prev) => ({ ...prev, grounding, stage: "platforms" }));
-
       // 2. Platform Citations
       try {
         const resp = await fetch("/api/brightdata-platforms", {
@@ -510,6 +492,14 @@ export function SROAnalysisTab({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keyword: s.keyword, targetUrl: s.targetUrl }),
         });
+        if (resp.status === 403) {
+          // Live calls are blocked on this deployment: keep the old results.
+          setS({
+            ...previous,
+            error: "Live analysis is not available on this deployment.",
+          });
+          return;
+        }
         if (resp.ok) {
           platforms = await resp.json();
         }
@@ -624,7 +614,7 @@ export function SROAnalysisTab({
         error: err instanceof Error ? err.message : String(err),
       }));
     }
-  }, [s.targetUrl, s.keyword]);
+  }, [s, demoMode]);
 
   // ── Render ────────────────────────────
 
@@ -656,18 +646,23 @@ export function SROAnalysisTab({
           />
           <button
             onClick={runFullAnalysis}
-            disabled={isRunning || !s.targetUrl || !s.keyword}
+            disabled={demoMode || isRunning || !s.targetUrl || !s.keyword}
             className="bd-btn-primary whitespace-nowrap rounded-lg px-5 py-2.5 text-sm disabled:opacity-50"
           >
             {isRunning ? "Running…" : "Analyze"}
           </button>
         </div>
+        {demoMode && (
+          <div className="mt-2 text-xs text-th-text-muted">
+            Live analysis is off in the demo
+          </div>
+        )}
         {isRunning && (
           <div className="mt-3">
             <ProgressBar stage={s.stage} />
           </div>
         )}
-        {s.stage === "error" && s.error && (
+        {!isRunning && s.error && (
           <div className="mt-2 rounded-lg border border-th-danger/30 bg-th-danger-soft px-3 py-2 text-sm text-th-danger">
             {s.error}
           </div>
@@ -957,7 +952,7 @@ export function SROAnalysisTab({
           <p className="text-xs text-th-text-muted max-w-md mx-auto leading-relaxed">
             Enter a target URL and keyword to analyze how well your content is
             being selected by AI systems as a grounding source. The analysis
-            checks Gemini grounding, cross-platform citations, SERP rankings,
+            checks cross-platform citations, SERP rankings,
             and provides actionable recommendations.
           </p>
         </div>

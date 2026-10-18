@@ -254,6 +254,17 @@ function extractSourcesFromAnswer(answer: string) {
 }
 
 function normalizeAnswer(rawRecord: Record<string, unknown>) {
+  // include_errors=true returns failed items as {input:{prompt}, error,
+  // error_code}. Never turn those into an answer.
+  if (rawRecord.error || rawRecord.error_code) {
+    const detail = [rawRecord.error_code, rawRecord.error]
+      .filter((v) => typeof v === "string" && v)
+      .join(": ");
+    throw new Error(
+      `Bright Data returned an error record${detail ? ` (${detail})` : ""}`,
+    );
+  }
+
   const answerCandidates = [
     rawRecord.answer_text, // Bright Data primary field
     rawRecord.answer_text_markdown, // Markdown variant (Perplexity, Copilot)
@@ -275,7 +286,6 @@ function normalizeAnswer(rawRecord: Record<string, unknown>) {
   // Deep extraction: look inside nested objects/arrays for text content
   function extractDeepText(obj: unknown, depth: number): string | null {
     if (depth > 3) return null;
-    if (typeof obj === "string" && obj.trim().length > 20) return obj.trim();
     if (Array.isArray(obj)) {
       for (const entry of obj) {
         const found = extractDeepText(entry, depth + 1);
@@ -307,8 +317,9 @@ function normalizeAnswer(rawRecord: Record<string, unknown>) {
           return (record[key] as string).trim();
         }
       }
-      // Recurse into any value
-      for (const val of Object.values(record)) {
+      // Recurse into any value except the echoed request input
+      for (const [key, val] of Object.entries(record)) {
+        if (key === "input") continue;
         const found = extractDeepText(val, depth + 1);
         if (found) return found;
       }
@@ -319,18 +330,7 @@ function normalizeAnswer(rawRecord: Record<string, unknown>) {
   const deepText = extractDeepText(rawRecord, 0);
   if (deepText) return deepText;
 
-  // Last resort: stringify but strip obvious noise
-  const raw = JSON.stringify(rawRecord);
-  // If it's tiny JSON, just return it — user will see something
-  if (raw.length < 500) return raw;
-  // For large blobs, try to extract readable text by stripping JSON structure
-  return raw
-    .replace(/[{}\[\]"]/g, " ")
-    .replace(/\\n/g, "\n")
-    .replace(/\\t/g, " ")
-    .replace(/\s{2,}/g, " ")
-    .trim()
-    .slice(0, 2000);
+  throw new Error("Bright Data record has no answer field");
 }
 
 async function monitorUntilReady(snapshotId: string) {

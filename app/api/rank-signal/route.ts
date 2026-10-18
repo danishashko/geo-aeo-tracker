@@ -117,7 +117,11 @@ export async function POST(req: NextRequest) {
   const rewriteModel = rewriteModelFromEnv();
   for (const model of [judgeModel, rewriteModel]) {
     const problem = modelProblem(model);
-    if (problem) return jsonError(400, problem);
+    if (problem)
+      return jsonError(
+        400,
+        `${problem} To change the rewriter model, set RANK_SIGNAL_REWRITE_MODEL (it falls back to OPENROUTER_MODEL).`,
+      );
   }
 
   const hourlyRemaining = hourlyCapRemainingUsd();
@@ -163,12 +167,15 @@ export async function POST(req: NextRequest) {
 
       try {
         // Pool under 40: top up from the SERP top 10 (cached per run).
-        const { passages, added } = await expandPool({
-          keyword: body.keyword,
-          targetUrl: body.targetUrl,
-          passages: basePool,
-          knownUrls: [body.targetPage.url, ...body.competitorPages.map((p) => p.url)],
-        });
+        const { passages, added } = await expandPool(
+          {
+            keyword: body.keyword,
+            targetUrl: body.targetUrl,
+            passages: basePool,
+            knownUrls: [body.targetPage.url, ...body.competitorPages.map((p) => p.url)],
+          },
+          { signal: abort.signal },
+        );
         if (abort.signal.aborted) return;
         const result = await runSignal(
           {

@@ -107,7 +107,7 @@ const MONTHS = [
 ];
 
 const MONTH_YEAR =
-  /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(?:\d{1,2}(?:st|nd|rd|th)?,?\s+)?(?:19|20)\d{2}\b/i;
+  /\b(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)\.?\s+(?:\d{1,2}(?:st|nd|rd|th)?,?\s+)?(?:19|20)\d{2}\b/i;
 
 // First words that are safe to lowercase after "As of {Month YYYY}, ".
 const LOWERCASE_OK = new Set(

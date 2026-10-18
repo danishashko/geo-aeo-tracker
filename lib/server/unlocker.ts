@@ -77,7 +77,10 @@ export async function scrapePage(url: string): Promise<ScrapedPage> {
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      throw new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);
+      console.error(
+        `[unlocker] Bright Data ${response.status}: ${body.slice(0, 500)}`,
+      );
+      throw new Error(`Page fetch failed (HTTP ${response.status}).`);
     }
 
     const markdown = await response.text();
@@ -108,6 +111,5 @@ export async function scrapePage(url: string): Promise<ScrapedPage> {
 }
 
 export async function scrapePages(urls: string[]): Promise<ScrapedPage[]> {
-  const batch = urls.slice(0, 5);
-  return Promise.all(batch.map((url) => scrapePage(url)));
+  return Promise.all(urls.map((url) => scrapePage(url)));
 }

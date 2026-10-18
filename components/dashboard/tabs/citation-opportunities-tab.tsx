@@ -194,7 +194,7 @@ export function CitationOpportunitiesTab({ runs, brandWebsites = [] }: CitationO
     <div className="space-y-3">
       {/* ── Header: stats + controls ── */}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-center gap-5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <Stat label="Opportunities" value={stats.totalOpportunities} accent />
           <Stat label="Domains" value={stats.uniqueDomains} />
           {stats.highPriorityCount > 0 && (
@@ -276,18 +276,18 @@ export function CitationOpportunitiesTab({ runs, brandWebsites = [] }: CitationO
       <div className="rounded-lg border border-th-border overflow-hidden">
         {/* Column headers */}
         {view === "domain" ? (
-          <div className="grid grid-cols-[1fr_72px_72px_72px_64px] gap-2 bg-th-card px-4 py-2 text-xs font-medium uppercase tracking-wider text-th-text-muted border-b border-th-border">
+          <div className="grid grid-cols-[1fr_40px_40px_52px] sm:grid-cols-[1fr_72px_72px_72px_64px] gap-2 bg-th-card px-4 py-2 text-[10px] sm:text-xs font-medium uppercase tracking-normal sm:tracking-wider text-th-text-muted border-b border-th-border">
             <span>Source</span>
             <span className="text-right">Cited</span>
-            <span className="text-right">Pages</span>
+            <span className="hidden text-right sm:block">Pages</span>
             <span className="text-right">Comp.</span>
             <span className="text-center">Priority</span>
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_72px_96px_64px] gap-2 bg-th-card px-4 py-2 text-xs font-medium uppercase tracking-wider text-th-text-muted border-b border-th-border">
+          <div className="grid grid-cols-[1fr_40px_64px_52px] sm:grid-cols-[1fr_72px_96px_64px] gap-2 bg-th-card px-4 py-2 text-[10px] sm:text-xs font-medium uppercase tracking-normal sm:tracking-wider text-th-text-muted border-b border-th-border">
             <span>URL</span>
             <span className="text-right">Cited</span>
-            <span className="text-right">Competitors</span>
+            <span className="text-right"><span className="sm:hidden">Comp.</span><span className="hidden sm:inline">Competitors</span></span>
             <span className="text-center">Priority</span>
           </div>
         )}
@@ -301,14 +301,14 @@ export function CitationOpportunitiesTab({ runs, brandWebsites = [] }: CitationO
                   <div key={item.domain}>
                     <button
                       onClick={() => setExpandedOpp((prev) => ({ ...prev, [item.domain]: !prev[item.domain] }))}
-                      className={`grid w-full grid-cols-[1fr_72px_72px_72px_64px] gap-2 items-center px-4 py-2.5 text-left transition-colors hover:bg-th-card-hover ${isOpen ? "bg-th-card-hover/50" : idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
+                      className={`grid w-full grid-cols-[1fr_40px_40px_52px] sm:grid-cols-[1fr_72px_72px_72px_64px] gap-2 items-center px-4 py-2.5 text-left transition-colors hover:bg-th-card-hover ${isOpen ? "bg-th-card-hover/50" : idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-xs text-th-text-muted">{isOpen ? "▾" : "▸"}</span>
                         <span className="text-sm font-medium text-th-text truncate">{item.domain}</span>
                       </div>
                       <span className="text-right text-sm font-semibold text-th-text tabular-nums">{item.totalCitations}</span>
-                      <span className="text-right text-sm text-th-text-secondary tabular-nums">{item.urls.length}</span>
+                      <span className="hidden text-right text-sm text-th-text-secondary tabular-nums sm:block">{item.urls.length}</span>
                       <span className="text-right text-sm text-th-text-secondary tabular-nums">{item.competitors.length}</span>
                       <div className="flex justify-center">
                         {item.hasHighPriority ? (
@@ -336,14 +336,14 @@ export function CitationOpportunitiesTab({ runs, brandWebsites = [] }: CitationO
 
                         {/* Pages */}
                         {item.urls.map((opp) => (
-                          <div key={opp.url} className="grid grid-cols-[1fr_72px_72px_72px_64px] gap-2 items-center px-4 py-2 pl-10 border-b border-th-border/30 last:border-b-0">
+                          <div key={opp.url} className="grid grid-cols-[1fr_40px_40px_52px] sm:grid-cols-[1fr_72px_72px_72px_64px] gap-2 items-center px-4 py-2 pl-10 border-b border-th-border/30 last:border-b-0">
                             <div className="flex items-center gap-2 min-w-0">
                               <a href={opp.url} target="_blank" rel="noreferrer" className="text-sm text-th-text-accent hover:underline truncate min-w-0" title={opp.url}>
                                 {opp.url.replace(/^https?:\/\/(www\.)?/, "")}
                               </a>
                             </div>
                             <span className="text-right text-xs text-th-text-secondary tabular-nums">{opp.citationCount}</span>
-                            <span />
+                            <span className="hidden sm:block" />
                             <span className="text-right text-xs text-th-text-muted tabular-nums">{opp.competitorsMentioned.length}</span>
                             <div className="flex justify-center">
                               {opp.highPriority ? (
@@ -388,10 +388,10 @@ export function CitationOpportunitiesTab({ runs, brandWebsites = [] }: CitationO
             : (filtered as typeof opportunities).map((opp, idx) => (
                 <div
                   key={opp.url}
-                  className={`grid grid-cols-[1fr_72px_96px_64px] gap-2 items-center px-4 py-2.5 ${idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
+                  className={`grid grid-cols-[1fr_40px_64px_52px] sm:grid-cols-[1fr_72px_96px_64px] gap-2 items-center px-4 py-2.5 ${idx % 2 === 0 ? "bg-th-card" : "bg-th-card-alt"}`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="shrink-0 text-xs text-th-text-muted">{opp.domain}</span>
+                    <span className="hidden shrink-0 text-xs text-th-text-muted sm:inline">{opp.domain}</span>
                     <a href={opp.url} target="_blank" rel="noreferrer" className="text-sm text-th-text-accent hover:underline truncate min-w-0" title={opp.url}>
                       {opp.url.replace(/^https?:\/\/(www\.)?/, "")}
                     </a>
@@ -399,7 +399,7 @@ export function CitationOpportunitiesTab({ runs, brandWebsites = [] }: CitationO
                   <span className="text-right text-sm font-semibold text-th-text tabular-nums">{opp.citationCount}</span>
                   <div className="flex flex-wrap justify-end gap-1">
                     {opp.competitorsMentioned.slice(0, 2).map((c) => (
-                      <span key={c} className="rounded bg-th-danger-soft px-1 py-0.5 text-[10px] font-medium text-th-danger truncate max-w-[80px]">{c}</span>
+                      <span key={c} className="rounded bg-th-danger-soft px-1 py-0.5 text-[10px] font-medium text-th-danger truncate max-w-full sm:max-w-[80px]">{c}</span>
                     ))}
                     {opp.competitorsMentioned.length > 2 && (
                       <span className="text-[10px] text-th-text-muted">+{opp.competitorsMentioned.length - 2}</span>

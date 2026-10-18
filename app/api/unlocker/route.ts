@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { assertPublicHttpUrl } from "@/lib/server/ssrf";
 import { scrapePage, scrapePages } from "@/lib/server/unlocker";
 
 const singleSchema = z.object({
@@ -7,7 +8,7 @@ const singleSchema = z.object({
 });
 
 const batchSchema = z.object({
-  urls: z.array(z.string().url()).min(1).max(10),
+  urls: z.array(z.string().url()).min(1).max(5),
 });
 
 export async function POST(req: NextRequest) {
@@ -16,11 +17,13 @@ export async function POST(req: NextRequest) {
 
     if (body.urls && Array.isArray(body.urls)) {
       const parsed = batchSchema.parse(body);
+      for (const u of parsed.urls) await assertPublicHttpUrl(u);
       const results = await scrapePages(parsed.urls);
       return NextResponse.json(results);
     }
 
     const parsed = singleSchema.parse(body);
+    await assertPublicHttpUrl(parsed.url);
     const result = await scrapePage(parsed.url);
     return NextResponse.json(result);
   } catch (error) {

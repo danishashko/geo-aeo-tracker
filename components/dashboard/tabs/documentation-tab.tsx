@@ -127,16 +127,15 @@ const sections: DocSection[] = [
     title: "SRO Analysis",
     icon: "📡",
     content: [
-      "Search Result Optimization (SRO) runs a 6-stage deep analysis pipeline for any URL + keyword combination.",
-      "Stage 1 — Gemini Grounding: checks if Google's Gemini model attributes content to your page via grounding metadata.",
-      "Stage 2 — Cross-Platform Citations: scrapes 5 AI platforms (ChatGPT, Perplexity, Gemini, Google AI, Copilot) to see which cite your URL.",
-      "Stage 3 — SERP Data: fetches real organic search results to find your ranking position and top competitors.",
-      "Stage 4 — Page Scraping: scrapes your target page + top competitor pages for content comparison.",
-      "Stage 5 — Site Context: extracts key information from your homepage for context-aware recommendations.",
-      "Stage 6 — LLM Analysis: a large language model synthesizes all gathered data into an SRO Score (0–100), actionable recommendations, content gaps, and competitor insights.",
+      "Search Result Optimization (SRO) runs a 5-stage analysis pipeline for any URL + keyword combination. Gemini Grounding (whether Gemini cites your page in its grounding metadata) runs only through the /api/bulk-sro endpoint and shows as skipped here.",
+      "Stage 1 — Cross-Platform Citations: scrapes 5 AI platforms (ChatGPT, Perplexity, Gemini, Google AI, Copilot) to see which cite your URL.",
+      "Stage 2 — SERP Data: fetches real organic search results to find your ranking position and top competitors.",
+      "Stage 3 — Page Scraping: scrapes your target page + top competitor pages for content comparison.",
+      "Stage 4 — Site Context: extracts key information from your homepage for context-aware recommendations.",
+      "Stage 5 — LLM Analysis: a large language model synthesizes all gathered data into an SRO Score (0–100), actionable recommendations, content gaps, and competitor insights.",
       "Results include: overall score ring, platform citation grid, SERP ranking table, prioritized recommendations with action items, content gaps, and competitor insights.",
       "The SRO tab stays mounted in the background — you can switch to other tabs while the analysis runs without losing progress.",
-      "Note: The Platform Citations stage can take several minutes as it polls Bright Data for results across all 6 AI platforms.",
+      "Note: The Platform Citations stage can take several minutes as it polls Bright Data for results across all 5 AI platforms.",
     ],
   },
   {
@@ -194,7 +193,7 @@ const sections: DocSection[] = [
     title: "Supported AI Models",
     icon: "🤖",
     content: [
-      "The tracker supports 6 AI model providers via Bright Data's Scraper API:",
+      "The tracker supports 5 AI model providers via Bright Data's Scraper API:",
       "• ChatGPT — OpenAI's conversational model",
       "• Perplexity — Search-focused AI with real-time citations",
       "• Copilot — Microsoft's AI assistant",
@@ -222,13 +221,13 @@ const sections: DocSection[] = [
     content: [
       "The tracker exposes 10 API routes under /api/:",
       "• POST /api/scrape — Query AI models via Bright Data AI Scrapers. Accepts provider, prompt, and requireSources. Returns structured AI responses with brand analysis.",
-      "• POST /api/analyze — OpenRouter LLM inference for battlecards, niche queries, and persona generation. Runs on Edge runtime.",
+      "• POST /api/analyze — OpenRouter LLM inference for battlecards, niche queries, and persona generation. Runs on the Node.js runtime.",
       "• POST /api/audit — AEO site audit. Crawls a URL and checks for llms.txt, Schema.org, BLUF density, heading structure, and more.",
       "• POST /api/sro-analyze — Final SRO analysis. Takes all gathered data (grounding, platforms, SERP, scraped pages, site context) and returns an overall SRO score with recommendations.",
       "• POST /api/serp — Fetches organic SERP results via Bright Data SERP API for a given keyword.",
       "• POST /api/site-context — Scrapes a homepage and extracts key context (meta info, headings, key phrases) for SRO analysis.",
       "• POST /api/unlocker — Scrapes one or multiple URLs via Bright Data Web Unlocker. Supports single url or batch urls mode.",
-      "• POST /api/brightdata-platforms — Polls 6 AI platforms via Bright Data dataset API to check for brand citations.",
+      "• POST /api/brightdata-platforms — Polls 5 AI platforms via Bright Data dataset API to check for brand citations.",
       "• POST /api/bulk-sro — SSE streaming endpoint for running SRO analysis across multiple keywords at once.",
       "• POST /api/rank-signal — SSE streaming endpoint for Rank Signal. Runs one signal's paired A/B trials on the scraped pages and streams progress, checkpoints and the result. GET returns the signal list and allowed judge models.",
       "All routes include input validation and error handling. Most routes use in-memory caching to minimize API costs.",
@@ -242,8 +241,8 @@ const sections: DocSection[] = [
       "The app requires 3 API keys in your .env file:",
       "• BRIGHT_DATA_KEY — Your Bright Data API token. Powers all AI scraping, SERP, Web Unlocker, and platform citation features.",
       "• OPENROUTER_KEY — Your OpenRouter API key. Used for LLM inference (battlecards, niche queries, SRO final analysis, site context extraction).",
-      "• GEMINI_API_KEY — Your Google Gemini API key. Used for the Gemini Grounding stage in SRO Analysis.",
-      "Additionally, 6 Bright Data dataset IDs are needed for the AI Scraper endpoints:",
+      "• GEMINI_API_KEY — Your Google Gemini API key. Used for the Gemini Grounding stage of /api/bulk-sro.",
+      "Additionally, 5 Bright Data dataset IDs are needed for the AI Scraper endpoints:",
       "• BRIGHT_DATA_DATASET_CHATGPT, BRIGHT_DATA_DATASET_PERPLEXITY, BRIGHT_DATA_DATASET_COPILOT, BRIGHT_DATA_DATASET_GEMINI, BRIGHT_DATA_DATASET_GOOGLE_AI (all optional — public defaults ship with the app)",
       "Optional zone overrides: BRIGHT_DATA_SERP_ZONE (default: serp_n8n), BRIGHT_DATA_UNLOCKER_ZONE (default: web_unlocker1).",
       "• RANK_SIGNAL_JUDGE_MODEL — Rank Signal judge model (default: google/gemini-3.6-flash).",
@@ -272,9 +271,9 @@ export function DocumentationTab() {
   const current = sections.find((s) => s.id === activeSection);
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-col gap-4 md:flex-row">
       {/* Sidebar TOC */}
-      <div className="w-52 shrink-0">
+      <div className="w-full md:w-52 md:shrink-0">
         <div className="mb-3">
           <input
             type="text"
@@ -284,7 +283,7 @@ export function DocumentationTab() {
             className="bd-input w-full rounded-lg px-3 py-2 text-sm"
           />
         </div>
-        <nav className="space-y-0.5 max-h-[65vh] overflow-y-auto">
+        <nav className="flex gap-1 overflow-x-auto md:block md:max-h-[65vh] md:space-y-0.5 md:overflow-x-visible md:overflow-y-auto">
           {filteredSections.map((section) => (
             <button
               key={section.id}
@@ -292,7 +291,7 @@ export function DocumentationTab() {
                 setActiveSection(section.id);
                 setSearch("");
               }}
-              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors md:w-full ${
                 activeSection === section.id
                   ? "bg-th-accent-soft text-th-text-accent font-medium"
                   : "text-th-text-secondary hover:bg-th-card-hover hover:text-th-text"

@@ -14,14 +14,30 @@ export function isDemoDeploy(
   return (value ?? "").trim().toLowerCase() === "true";
 }
 
+const LOCAL_ORIGIN = "http://localhost:3000";
+
+/** Adds https:// when there is no scheme, drops trailing slashes, null if unparsable. */
+function normalizeOrigin(raw: string): string | null {
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw)
+    ? raw
+    : `https://${raw}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return withScheme.replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
 /** NEXT_PUBLIC_SITE_URL, else the Vercel production domain, else localhost. */
 export function siteOrigin(env: Env = process.env): string {
   const explicit = (env.NEXT_PUBLIC_SITE_URL ?? "").trim();
-  if (explicit) return explicit.replace(/\/+$/, "");
+  if (explicit) return normalizeOrigin(explicit) ?? LOCAL_ORIGIN;
   const vercel = (env.VERCEL_PROJECT_PRODUCTION_URL ?? "").trim();
   if (vercel)
     return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
-  return "http://localhost:3000";
+  return LOCAL_ORIGIN;
 }
 
 const AI_BOTS = [
@@ -121,7 +137,7 @@ const FEATURE_TABS: Array<[string, string]> = [
   ],
   [
     "SRO Analysis",
-    "6-stage deep pipeline: Gemini Grounding → Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis. Produces SRO Score (0 to 100), prioritized recommendations, content gaps & competitor insights",
+    "Deep pipeline: Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis (Gemini Grounding runs in the bulk-sro API). Produces SRO Score (0 to 100), prioritized recommendations, content gaps & competitor insights",
   ],
   ["Automation", "Cron / GitHub Actions templates for scheduled runs"],
   ["Documentation", "Searchable 18-section guide covering every feature"],
@@ -130,11 +146,12 @@ const FEATURE_TABS: Array<[string, string]> = [
 const CAPABILITIES = [
   "Multi-model tracking across ChatGPT, Perplexity, Gemini, Copilot, and Google AI Mode",
   'Geo-scoped tracking: run visibility checks by country and compare markets, with a "visibility by country" breakdown',
-  "SRO Analysis: 6-stage pipeline scoring how well your page is optimized for AI search results",
+  "SRO Analysis: multi-stage pipeline scoring how well your page is optimized for AI search results",
+  "Rank Signal: paired A/B tests inside the SRO tab that measure whether one text feature (a number, a named source, a freshness clause) changes which passage a model picks",
   "Visibility scoring (0 to 100): brand mentions, position, frequency, citations, sentiment",
   "Drift alerts: automatic notifications when your score changes significantly",
   "Scheduled auto-runs: configurable interval-based batch scraping",
-  "Fully parallel batch runs: all prompt × provider combos execute simultaneously",
+  "Batch runs: every prompt × engine combo, 4 at a time to stay inside the rate limit",
   "Historical comparison: delta tracking across time periods",
   "Multi-workspace: manage multiple brands/projects independently",
   "Dark/light/system theme with a polished sidebar UI",
@@ -195,6 +212,12 @@ const API_ROUTES: Array<[string, string, string, string]> = [
     "bulk-sro",
     "Node.js",
     "SSE streaming, bulk SRO analysis across multiple keywords",
+  ],
+  [
+    "POST /api/rank-signal",
+    "rank-signal",
+    "Node.js",
+    "SSE streaming, Rank Signal paired A/B trials for one signal (GET returns signals and allowed judge models)",
   ],
   [
     "GET/PUT/DELETE /api/state",
@@ -310,7 +333,7 @@ export function llmsFullTxt(origin: string): string {
     "",
     "- `BRIGHT_DATA_KEY`: switches on live AI-engine tracking. With no key the dashboard loads the sample dataset and tells you so in a banner.",
     "- `OPENROUTER_KEY`: powers LLM analysis (`/api/analyze`, `/api/sro-analyze`, `/api/site-context`). Without it, scraping still works and the analysis panels report that they are not configured. Override the model with `OPENROUTER_MODEL` (default `google/gemini-3.5-flash`).",
-    "- `GEMINI_API_KEY`: separate from OpenRouter. It powers only the Gemini grounding stage, which uses Google Search grounding to see which pages Gemini actually cites in real time. A missing key skips that stage and the rest of the SRO pipeline runs.",
+    "- `GEMINI_API_KEY`: separate from OpenRouter. It powers only the Gemini grounding stage of the bulk-sro API, which uses Google Search grounding to see which pages Gemini actually cites in real time. A missing key skips that stage and the rest of the SRO pipeline runs.",
     "- `BRIGHT_DATA_DATASET_*`: not needed. The app ships with Bright Data's public AI-Scraper dataset ID for every engine. Set one only to point an engine at a custom or private dataset.",
     "- `BRIGHT_DATA_SERP_ZONE` and `BRIGHT_DATA_UNLOCKER_ZONE`: zone names for the SRO pipeline. They default to `serp_api1` and `web_unlocker1`.",
     "- `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_CLOUD_STORAGE_ENABLED=true` and `STATE_SYNC_SECRET`: optional Supabase cloud sync. `STATE_SYNC_SECRET` is required when cloud sync is enabled, otherwise `/api/state` rejects every request.",

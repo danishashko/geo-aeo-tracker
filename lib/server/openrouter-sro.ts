@@ -8,6 +8,7 @@ import type {
   ScrapedPage,
   SiteContext,
 } from "./sro-types";
+import { fetchWithTimeout } from "./http";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 // Gemini Flash is fast + reliable at structured JSON; overridable via env.
@@ -331,28 +332,33 @@ export async function analyzeSRO(
   const userPrompt = buildUserPrompt(input);
 
   try {
-    const response = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      OPENROUTER_URL,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.3,
+          response_format: { type: "json_object" },
+        }),
       },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-        response_format: { type: "json_object" },
-      }),
-    });
+      90_000,
+    );
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unknown error");
-      return defaultResult(
-        `OpenRouter API returned ${response.status}: ${errorText}`,
+      console.error(
+        `[openrouter-sro] OpenRouter returned ${response.status}: ${errorText.slice(0, 500)}`,
       );
+      return defaultResult(`OpenRouter API returned ${response.status}.`);
     }
 
     const json = await response.json();

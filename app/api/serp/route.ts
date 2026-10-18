@@ -3,7 +3,7 @@ import { z } from "zod";
 import { fetchSerp } from "@/lib/server/serp";
 
 const requestSchema = z.object({
-  keyword: z.string().min(1),
+  keyword: z.string().min(1).max(200),
   targetUrl: z.string().url(),
 });
 

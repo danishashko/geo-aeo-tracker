@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { fetchWithTimeout } from "@/lib/server/http";
@@ -8,9 +9,16 @@ export const runtime = "nodejs";
 // honours this up to the plan limit (60s Hobby / 300s Pro).
 export const maxDuration = 120;
 
+const DEFAULT_MODEL = "google/gemini-3.5-flash";
+// Models the app's own UI requests (battlecards pin DEFAULT_MODEL). Anything
+// else falls back to the server default so this isn't an open LLM proxy.
+const ALLOWED_MODELS = new Set([DEFAULT_MODEL]);
+
 const bodySchema = z.object({
-  prompt: z.string().min(5),
-  maxTokens: z.number().int().min(128).max(8192).optional(),
+  // Largest prompt the app builds is a few KB (brand context + template).
+  prompt: z.string().min(5).max(20_000),
+  // Callers use 256, 1300 and 1500.
+  maxTokens: z.number().int().min(128).max(2000).optional(),
   temperature: z.number().min(0).max(1.5).optional(),
   skipCache: z.boolean().optional(),
   // Optional per-request model override (e.g. structured-output tasks).
@@ -22,12 +30,22 @@ const cache = new Map<string, { expiresAt: number; text: string }>();
 export async function POST(req: NextRequest) {
   try {
     const parsed = bodySchema.parse(await req.json());
-    const cacheKey = JSON.stringify({
-      prompt: parsed.prompt,
-      maxTokens: parsed.maxTokens,
-      temperature: parsed.temperature,
-      model: parsed.model,
-    });
+    const serverModel = process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+    const model =
+      parsed.model &&
+      (parsed.model === serverModel || ALLOWED_MODELS.has(parsed.model))
+        ? parsed.model
+        : serverModel;
+    const cacheKey = createHash("sha256")
+      .update(
+        JSON.stringify({
+          prompt: parsed.prompt,
+          maxTokens: parsed.maxTokens ?? 900,
+          temperature: parsed.temperature ?? 0.2,
+          model,
+        }),
+      )
+      .digest("hex");
 
     if (!parsed.skipCache) {
       const hit = cache.get(cacheKey);
@@ -56,10 +74,7 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model:
-            parsed.model ||
-            process.env.OPENROUTER_MODEL ||
-            "google/gemini-3.5-flash",
+          model,
           messages: [
             {
               role: "user",

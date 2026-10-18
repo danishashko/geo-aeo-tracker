@@ -31,5 +31,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "overrides": {
+    "eslint-plugin-react-hooks": "7.0.1"
   }
 }

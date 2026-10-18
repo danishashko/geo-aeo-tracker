@@ -94,6 +94,7 @@ GEO/AEO Tracker is the better pick when you want:
 - 🤖 **Multi-model tracking** across ChatGPT, Perplexity, Gemini, Copilot, and Google AI Mode
 - 🌍 **Geo-scoped tracking**: run visibility checks by country and compare markets, with a "visibility by country" breakdown
 - � **SRO Analysis**: 6-stage pipeline scoring how well your page is optimized for AI search results
+- 🧪 **Rank Signal**: paired A/B tests inside the SRO tab that measure whether one text feature (a number, a named source, a freshness clause, …) changes which passage a model picks
 - 📈 **Visibility scoring** (0–100): brand mentions, position, frequency, citations, sentiment
 - 🔔 **Drift alerts**: automatic notifications when your score changes significantly
 - ⏰ **Scheduled auto-runs**: configurable interval-based batch scraping
@@ -102,6 +103,10 @@ GEO/AEO Tracker is the better pick when you want:
 - 🏢 **Multi-workspace**: manage multiple brands/projects independently
 - 🎨 **Dark/light/system** theme with a polished sidebar UI
 - 📱 **Mobile-responsive**: collapsible sidebar with hamburger menu, adaptive KPI grid, and scrollable model toolbar — works on any screen size
+
+### 🧪 Rank Signal
+
+The SRO score says how often your page is used; Rank Signal tests *which text features* get a passage picked. After an SRO run, it takes passages from your page and the top competitors (topped up from the rest of the SERP top 10 when there are fewer than 40), builds two versions of each that differ in exactly one feature, and asks a judge model which one it would rather cite. Wins are scored with a Jeffreys posterior and read only at 20, 30 and 40 trials, so a verdict (positive, negative, no clear effect, or inconclusive) comes with its 95% interval. An S00 placebo, which rewords one sentence without changing its meaning or length, shows how much the judge reacts to being edited at all. It is a pairwise preference proxy, not live grounding selection. Method after DEJAN AI's Rank Signal (dejan.ai/optimizer-sample).
 
 ## Architecture
 
@@ -192,6 +197,7 @@ cp .env.example .env
 - **`GEMINI_API_KEY`** — **separate from OpenRouter.** It powers only the Gemini *grounding* stage, which uses Google Search grounding to see which pages Gemini actually cites in real time. OpenRouter can't do that, which is why it is its own key. Missing key skips that one stage; the rest of the SRO pipeline runs.
 - **`BRIGHT_DATA_DATASET_*`** — **you don't need these.** The app ships with Bright Data's public AI-Scraper dataset ID for every engine. Set one only to point an engine at a custom or private dataset from the [Scrapers Library](https://brightdata.com/cp/scrapers).
 - **`BRIGHT_DATA_SERP_ZONE`** / **`BRIGHT_DATA_UNLOCKER_ZONE`** — zone **names** for the SRO pipeline. They default to `serp_api1` and `web_unlocker1`, the names Bright Data's own docs use, so most accounts work untouched. Set them if you named your zones differently.
+- **`RANK_SIGNAL_JUDGE_MODEL`** / **`RANK_SIGNAL_REWRITE_MODEL`** — Rank Signal's judge (default `google/gemini-3.6-flash`) and pair builder (default `OPENROUTER_MODEL`, then `google/gemini-3.5-flash`). Both must be in **`RANK_SIGNAL_ALLOWED_MODELS`** (comma list, defaults to those two) and in the route's price table. **`RANK_SIGNAL_MAX_USD_PER_HOUR`** (default `10`) caps server-side spend per instance; it is in-memory, so a stranger can use it up and lock you out until the hour resets, and the per-IP limit trusts `x-forwarded-for`. Put auth and a shared store (Upstash / Vercel KV) in front for hard limits.
 
 Supabase cloud-sync and demo-mode variables are documented in `.env.example`.
 
@@ -284,6 +290,7 @@ By default, **all your data stays in your browser** (IndexedDB). That's great fo
 | `POST /api/unlocker` | Node.js | Bright Data Web Unlocker — single or batch URL scraping |
 | `POST /api/brightdata-platforms` | Node.js | 5-platform AI citation polling via Bright Data datasets |
 | `POST /api/bulk-sro` | Node.js | SSE streaming — bulk SRO analysis across multiple keywords |
+| `POST /api/rank-signal` | Node.js | SSE streaming — Rank Signal paired A/B trials for one signal (GET returns signals + allowed judge models) |
 | `GET/PUT/DELETE /api/state` | Node.js | Cloud KV store proxy — reads/writes to Supabase using service-role key (disabled when cloud not configured) |
 
 All routes include input validation and error handling. Most routes use in-memory caching to minimize API costs.

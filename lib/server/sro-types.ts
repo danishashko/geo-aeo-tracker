@@ -195,3 +195,45 @@ export interface BrightDataCitation {
   description?: string;
   cited?: boolean;
 }
+
+// ─── Rank Signal Types ───────────────────────────────────────────────────
+
+export interface RankSignalTrial {
+  passageHash: string;
+  origin: "target" | "competitor";
+  direction: "add" | "remove";
+  featureSide: "A" | "B";
+  outcome: "win" | "loss" | "invalid";
+}
+
+export interface RankSignalResult {
+  runId: string;
+  signalId: string;
+  catalogVersion: number;
+  judgeModel: string;
+  rewriteModel: string;
+  reasoningEffort: string;
+  targetUrl: string;
+  keyword: string;
+  startedAt: string;
+  finishedAt: string;
+  trials: RankSignalTrial[];
+  rejectedPairs: number;
+  skipped: number;
+  costUsd: number;
+  endReason:
+    | "verdict"
+    | "max_trials"
+    | "pool_exhausted"
+    | "budget"
+    | "aborted"
+    | "error";
+}
+
+/** A built pair shown in the UI as a "synthetic test edit". Never published. */
+export interface RankSignalExample {
+  signalId: string;
+  direction: "add" | "remove";
+  with: string;
+  without: string;
+}

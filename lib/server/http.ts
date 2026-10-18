@@ -5,13 +5,20 @@
  * poll loop waits forever.
  */
 
-/** fetch() with a hard timeout. Aborts the request after `timeoutMs`. */
+/**
+ * fetch() with a hard timeout. Aborts the request after `timeoutMs`, or earlier
+ * if the caller's own `signal` aborts (e.g. the client disconnected).
+ */
 export async function fetchWithTimeout(
   input: string | URL,
   init: RequestInit = {},
   timeoutMs = 30_000,
 ): Promise<Response> {
-  return fetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = init.signal
+    ? AbortSignal.any([init.signal, timeout])
+    : timeout;
+  return fetch(input, { ...init, signal });
 }
 
 /** Race any promise against a timeout — for SDK calls that don't accept a signal. */

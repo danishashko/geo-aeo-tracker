@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test \"lib/**/*.test.ts\"",
     "test:scraper": "node --env-file=.env scripts/test-scraper.js",
     "test:pillar": "node scripts/test-pillar.js"
   },
@@ -28,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

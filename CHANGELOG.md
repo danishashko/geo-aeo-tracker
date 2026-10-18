@@ -4,6 +4,19 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
+## [1.6.0] — Unreleased
+
+### 🧪 New: Rank Signal (paired A/B feature tests)
+
+- **Which text features get a passage picked.** A new Rank Signal card in the SRO tab runs paired A/B trials on passages from your page and the top 3 competitors, topped up from the rest of the SERP top 10 when the pool is under 40 passages (up to 60): two versions that differ in one feature (a number, a named source, a freshness clause, bullets, bold query terms, …), and a judge model picks the one it would rather cite. 15 starter signals, 4 of them built in code with no rewriter call. Method after DEJAN AI's Rank Signal (dejan.ai/optimizer-sample).
+- **Honest verdicts.** Wins are scored with a Jeffreys posterior and a 95% interval, read only at 20, 30 and 40 trials (about 8% false verdicts under no effect, versus 15% when checked every trial). Weak data says "no clear effect (n=40)" or "inconclusive (reason)", never "no effect". An S00 placebo (one sentence paraphrased, same facts and length) is always shown as the calibration line for edit bias.
+- **Spend guards.** Per-run cost cap in the UI (default $5), a server clamp, an in-memory hourly cap (`RANK_SIGNAL_MAX_USD_PER_HOUR`, default $10), a model allowlist (`RANK_SIGNAL_ALLOWED_MODELS`) and 6 requests per minute per IP. Stopping a run or closing the tab aborts in-flight model calls.
+- **Persistence.** Results are stored per trial (not per verdict) and survive reloads; a "This run / All runs" toggle adds a pooled, descriptive view across runs. The demo shows DEJAN AI's published sample, relabelled D01-D17.
+- New endpoint `POST /api/rank-signal` (SSE). `fetchWithTimeout` now honours a caller's abort signal alongside its timeout.
+- `npm test` runs the new unit and integration tests (`node:test` via `tsx`), including all 17 of DEJAN AI's published rows reproduced at 3 decimals.
+
+---
+
 ## [1.5.0] — 2026-08-12
 
 ### ⚙️ Every environment variable is now optional

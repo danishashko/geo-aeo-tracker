@@ -12,6 +12,7 @@ import type {
   LLMAnalysisResult,
   LLMRecommendation,
 } from "@/lib/server/sro-types";
+import { RankSignalPanel } from "./rank-signal-panel";
 
 type AnalysisStage =
   | "idle"
@@ -960,6 +961,17 @@ export function SROAnalysisTab({
             and provides actionable recommendations.
           </p>
         </div>
+      )}
+
+      {/* Rank Signal: runs on this analysis' pages; stored results show when idle */}
+      {(s.stage === "done" || s.stage === "idle") && (
+        <RankSignalPanel
+          targetUrl={s.targetUrl}
+          keyword={s.keyword}
+          targetPage={s.targetPage}
+          competitorPages={s.competitorPages}
+          demoMode={demoMode}
+        />
       )}
     </div>
   );

@@ -84,7 +84,7 @@ function isPrivateIp(ip: string): boolean {
     const addr = ip.split("%")[0]; // drop zone id
     if (blockedV6.check(addr, "ipv6")) return true;
     const g = expandV6(addr);
-    if (!g) return true; // unparseable — fail closed
+    if (!g) return true; // unparseable, fail closed
     // Re-check any embedded IPv4: mapped/compatible, NAT64, 6to4.
     const low96Zero = g.slice(0, 5).every((x) => x === 0);
     if (low96Zero && (g[5] === 0xffff || g[5] === 0))

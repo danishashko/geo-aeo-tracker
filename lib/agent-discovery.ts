@@ -140,7 +140,7 @@ const FEATURE_TABS: Array<[string, string]> = [
     "Deep pipeline: Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis (Gemini Grounding runs in the bulk-sro API). Produces SRO Score (0 to 100), prioritized recommendations, content gaps & competitor insights",
   ],
   ["Automation", "Cron / GitHub Actions templates for scheduled runs"],
-  ["Documentation", "Searchable 18-section guide covering every feature"],
+  ["Documentation", "Searchable 19-section guide covering every feature"],
 ];
 
 const CAPABILITIES = [

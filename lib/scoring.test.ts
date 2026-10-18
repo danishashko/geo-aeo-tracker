@@ -48,6 +48,8 @@ test("sentiment words match whole words only", () => {
   const neg = "Acme is poor, bad, weak and risky. Avoid.";
   assert.equal(detectSentiment(neg, ["Acme"]), "negative");
   assert.equal(detectSentiment("Nothing here", ["Acme"]), "not-mentioned");
+  const comparative = "Acme is stronger than rivals, with greater reach.";
+  assert.equal(detectSentiment(comparative, ["Acme"]), "positive");
 });
 
 test("scoring weights are unchanged", () => {

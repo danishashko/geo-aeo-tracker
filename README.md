@@ -87,7 +87,7 @@ GEO/AEO Tracker is the better pick when you want:
 | 🏥 **AEO Audit** | Site readiness check: llms.txt, Schema.org, BLUF density, heading structure |
 | 📡 **SRO Analysis** | Deep pipeline: Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis (Gemini Grounding runs in the `bulk-sro` API). Produces SRO Score (0–100), prioritized recommendations, content gaps & competitor insights |
 | ⏱️ **Automation** | Cron / GitHub Actions templates for scheduled runs |
-| 📖 **Documentation** | Searchable 18-section guide covering every feature |
+| 📖 **Documentation** | Searchable 19-section guide covering every feature |
 
 ### 🚀 Core Capabilities
 
@@ -197,7 +197,7 @@ cp .env.example .env
 - **`GEMINI_API_KEY`** — **separate from OpenRouter.** It powers only the Gemini *grounding* stage of the `bulk-sro` API, which uses Google Search grounding to see which pages Gemini actually cites in real time. OpenRouter can't do that, which is why it is its own key. Missing key skips that one stage; the rest of the SRO pipeline runs.
 - **`BRIGHT_DATA_DATASET_*`** — **you don't need these.** The app ships with Bright Data's public AI-Scraper dataset ID for every engine. Set one only to point an engine at a custom or private dataset from the [Scrapers Library](https://brightdata.com/cp/scrapers).
 - **`BRIGHT_DATA_SERP_ZONE`** / **`BRIGHT_DATA_UNLOCKER_ZONE`** — zone **names** for the SRO pipeline. They default to `serp_api1` and `web_unlocker1`, the names Bright Data's own docs use, so most accounts work untouched. Set them if you named your zones differently.
-- **`RANK_SIGNAL_JUDGE_MODEL`** / **`RANK_SIGNAL_REWRITE_MODEL`** — Rank Signal's judge (default `google/gemini-3.6-flash`) and pair builder (default `OPENROUTER_MODEL`, then `google/gemini-3.5-flash`). Both must be in **`RANK_SIGNAL_ALLOWED_MODELS`** (comma list, defaults to those two) and in the route's price table. **`RANK_SIGNAL_MAX_USD_PER_HOUR`** (default `10`) caps server-side spend per instance; it is in-memory, so a stranger can use it up and lock you out until the hour resets, and the per-IP limit trusts `x-forwarded-for`. Put auth and a shared store (Upstash / Vercel KV) in front for hard limits.
+- **`RANK_SIGNAL_JUDGE_MODEL`** / **`RANK_SIGNAL_REWRITE_MODEL`** — Rank Signal's judge (default `google/gemini-3.6-flash`) and pair builder (default `OPENROUTER_MODEL`, then `google/gemini-3.5-flash`). Both must be in **`RANK_SIGNAL_ALLOWED_MODELS`** (comma list, defaults to those two) and in the route's price table. **`RANK_SIGNAL_MAX_USD_PER_HOUR`** (default `10`) caps server-side spend per instance; it is in-memory, so a stranger can use it up and lock you out until the hour resets, and the per-IP limit reads `x-vercel-forwarded-for`, then `x-real-ip`, then the last `x-forwarded-for` hop, so it is best-effort off Vercel. Put auth and a shared store (Upstash / Vercel KV) in front for hard limits.
 
 Supabase cloud-sync and demo-mode variables are documented in `.env.example`.
 

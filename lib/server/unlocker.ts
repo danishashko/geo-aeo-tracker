@@ -1,3 +1,4 @@
+import { assertPublicHttpUrl } from "./ssrf";
 import type { ScrapedPage } from "./sro-types";
 import { fetchWithTimeout } from "./http";
 
@@ -42,20 +43,29 @@ function getContentSnippet(fullText: string, wordLimit = 500): string {
   return words.slice(0, wordLimit).join(" ");
 }
 
+function failedPage(url: string, error: string): ScrapedPage {
+  return {
+    url,
+    domain: extractDomain(url),
+    title: "",
+    headings: [],
+    wordCount: 0,
+    contentSnippet: "",
+    fullText: "",
+    metaDescription: "",
+    error,
+  };
+}
+
 export async function scrapePage(url: string): Promise<ScrapedPage> {
   const apiKey = process.env.BRIGHT_DATA_KEY;
-  if (!apiKey) {
-    return {
-      url,
-      domain: extractDomain(url),
-      title: "",
-      headings: [],
-      wordCount: 0,
-      contentSnippet: "",
-      fullText: "",
-      metaDescription: "",
-      error: "BRIGHT_DATA_KEY is not configured",
-    };
+  if (!apiKey) return failedPage(url, "BRIGHT_DATA_KEY is not configured");
+
+  // Every caller passes user- or SERP-supplied URLs, so validate here.
+  try {
+    await assertPublicHttpUrl(url);
+  } catch (err) {
+    return failedPage(url, err instanceof Error ? err.message : "URL not allowed");
   }
 
   const zone = process.env.BRIGHT_DATA_UNLOCKER_ZONE || "web_unlocker1";

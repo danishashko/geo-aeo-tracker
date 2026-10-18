@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
 
     if (body.urls && Array.isArray(body.urls)) {
       const parsed = batchSchema.parse(body);
-      for (const u of parsed.urls) await assertPublicHttpUrl(u);
       const results = await scrapePages(parsed.urls);
       return NextResponse.json(results);
     }

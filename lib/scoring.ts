@@ -102,7 +102,7 @@ export function detectSentiment(
   if (brandTerms.length === 0) return "not-mentioned";
   if (findMentions(answer, brandTerms).length === 0) return "not-mentioned";
 
-  const suffix = "(?:s|d|ed|ing|ly)?";
+  const suffix = "(?:s|d|ed|er|est|ing|ly)?";
   const count = (words: string[]) =>
     words.filter((w) => wordRegex(w, suffix).test(answer)).length;
   const posScore = count(POSITIVE_WORDS);

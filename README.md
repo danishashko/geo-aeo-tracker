@@ -11,10 +11,8 @@
 <h1 align="center">GEO/AEO Tracker</h1>
 
 <p align="center">
-  Open-source, local-first AI visibility intelligence dashboard.<br/>
-  Track your brand across <strong>6 AI models</strong> with zero vendor lock-in.<br/>
-  Now with <strong>SRO Analysis</strong> — deep cross-platform search result optimization.<br/>
-  <strong>Mobile-responsive</strong> — works seamlessly on desktop, tablet, and phone.
+  Open-source, self-hosted AI visibility tracker for GEO and AEO.<br/>
+  Track your brand in ChatGPT, Perplexity, Gemini, Microsoft Copilot and Google AI Mode.
 </p>
 
 <p align="center">
@@ -25,10 +23,12 @@
   <a href="#api-routes"><strong>API</strong></a>
 </p>
 
+GEO/AEO Tracker is an open-source alternative to Profound, Otterly and AthenaHQ. Each run scores your brand from 0 to 100 on mentions, position, frequency, citations and sentiment, and adds citation analysis, competitor battlecards and SRO analysis. It is for marketers, SEO teams and founders who want to own their data and their code. The software is free under the MIT license. Bright Data, OpenRouter and Gemini bill per API call. [Try the live demo](https://geo-aeo-tracker-wine.vercel.app).
+
 ---
 
 > 🌐 **Built with [Bright Data](https://brightdata.com/?utm_source=geo-tracker-os)** — the world's leading web data platform.
-> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 6 AI models.
+> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 5 AI models.
 > [Get your API key →](https://brightdata.com/?utm_source=geo-tracker-os)
 
 ---
@@ -37,15 +37,37 @@
 
 AI models are replacing traditional search for millions of queries. If your brand isn't visible in ChatGPT, Perplexity, or Gemini responses, you're invisible to a growing audience.
 
-Existing tools charge **$200–$500+/month**, lock you into closed ecosystems, and store your data on their servers.
+Paid AI visibility tools run from $29 a month to custom enterprise quotes, and they keep your data on their servers. [How it compares](#how-it-compares) lists current prices and plan limits.
 
 **GEO/AEO Tracker** is the alternative:
 
-- 🔑 **BYOK** (Bring Your Own Keys): your data never leaves your machine
-- 🤖 **6 AI models** simultaneously: more coverage than paid tools
-- 💸 **$0/month**: self-hosted, open-source, forever free
+- 🔑 **BYOK** (Bring Your Own Keys): results are stored in your browser by default
+- 🤖 **5 AI engines** simultaneously: ChatGPT, Perplexity, Gemini, Copilot and Google AI Mode
+- 💸 **Free software, pay-per-call data**: the code is MIT licensed, and Bright Data, OpenRouter and Gemini bill per call
 - 🛡️ **Local-first** by default: IndexedDB + localStorage, no external database
 - ☁️ **Optional cloud sync** via your own Supabase project (free tier) for multi-device access
+
+## How it compares
+
+| Tool | Plan and price | Engines on that plan | Prompt allowance | Open source / self-hosted | Where data lives |
+|------|-------------|-----------------------|------------------|---------------------------|------------------|
+| **GEO/AEO Tracker** | Free (MIT), you pay API providers per call | ChatGPT, Perplexity, Gemini, Copilot, Google AI Mode | No plan cap, limited by your API spend | Yes, MIT | Your browser (optional own Supabase) |
+| [Otterly.AI Lite](https://otterly.ai/pricing) | $29/month monthly, $25/month billed annually | ChatGPT, Google AI Overviews, Perplexity, Microsoft Copilot (Claude, AI Mode and Gemini are paid add-ons) | 15 prompts | No | Vendor cloud |
+| [Semrush SEO + AI Search Starter](https://www.semrush.com/pricing/seo-ai-search/) (includes AI Visibility) | $199/month monthly, $165.17/month billed annually | Google Search, ChatGPT, Perplexity, Gemini and more | 50 prompts tracked daily | No | Vendor cloud |
+| [AthenaHQ Starter](https://www.athenahq.ai/pricing) | $295/month | 11 models including ChatGPT, Perplexity, AI Overviews, AI Mode, Gemini, Claude, Copilot, Grok, DeepSeek, Meta AI, Mistral | 3,600 credits a month (1 credit = 1 AI response) | No | Vendor cloud |
+| [Profound](https://www.tryprofound.com/pricing) | Free 7-day Trial (50 prompts daily, ChatGPT, Gemini, AI Overviews), then custom Enterprise pricing | Up to 9 engines on Enterprise | Custom | No | Vendor cloud |
+
+Prices as of October 2026.
+
+A paid tool is the better pick when you want:
+- Managed scheduling and reports without running anything yourself
+- More engines on the plan, such as Claude, DeepSeek or Meta AI
+- No API keys to manage
+
+GEO/AEO Tracker is the better pick when you want:
+- To own your data, with results stored in your browser or your own Supabase project
+- No per-seat plan, so cost follows the prompts you run
+- To change the code
 
 ## Features
 
@@ -84,19 +106,19 @@ Existing tools charge **$200–$500+/month**, lock you into closed ecosystems, a
 ## Architecture
 
 ```
-Next.js 16.1 + Turbopack
+Next.js 16 + Turbopack
 ├── app/
 │   ├── page.tsx                    # Main dashboard (or demo via env var)
 │   ├── demo/page.tsx               # Standalone demo route
 │   └── api/
 │       ├── scrape/route.ts         # Bright Data AI Scrapers (Node runtime)
-│       ├── analyze/route.ts        # OpenRouter LLM analysis (Edge runtime)
+│       ├── analyze/route.ts        # OpenRouter LLM analysis (Node.js runtime)
 │       ├── audit/route.ts          # AEO site audit crawler
 │       ├── sro-analyze/route.ts    # SRO final LLM analysis
 │       ├── serp/route.ts           # Bright Data SERP results
 │       ├── site-context/route.ts   # Homepage context extraction
 │       ├── unlocker/route.ts       # Bright Data Web Unlocker (single/batch)
-│       ├── brightdata-platforms/   # 6-platform AI citation polling
+│       ├── brightdata-platforms/   # 5-platform AI citation polling
 │       ├── bulk-sro/route.ts       # SSE bulk SRO analysis
 │       └── state/route.ts          # Cloud KV store (GET/PUT/DELETE — Node runtime)
 ├── components/
@@ -112,7 +134,7 @@ Next.js 16.1 + Turbopack
 │   │   ├── supabase.ts             # Server-side Supabase singleton (service_role)
 │   │   ├── kv-store.ts             # kvGet / kvSet / kvDelete helpers
 │   │   ├── brightdata-scraper.ts   # Bright Data AI Scraper integration
-│   │   ├── brightdata-platforms.ts # 6-platform citation scraper
+│   │   ├── brightdata-platforms.ts # 5-platform citation scraper
 │   │   ├── gemini-grounding.ts     # Gemini Grounding via Google Search
 │   │   ├── openrouter-sro.ts       # SRO analysis via OpenRouter
 │   │   ├── serp.ts                 # SERP data via Bright Data
@@ -131,7 +153,7 @@ Next.js 16.1 + Turbopack
 - **IndexedDB** primary store (no size limit) with localStorage as best-effort cache; same public API whether cloud is active or not
 - **Cloud storage routes through `/api/state`** — the client never calls Supabase directly, so `service_role` stays server-side and RLS isn't a concern
 - **Auto-opt-in cloud**: when `NEXT_PUBLIC_CLOUD_STORAGE_ENABLED=true` the IDB write path becomes a cache; IDB is the authoritative fallback if the cloud route fails
-- **Edge runtime** for `/api/analyze` (Gemini Flash via OpenRouter) — fast global inference
+- **Node.js runtime** for `/api/analyze` (Gemini Flash via OpenRouter), 120 second max duration
 - **Bright Data Web Scraper API** for AI model scraping — reliable, structured data
 - **Bright Data SERP + Web Unlocker** for SRO pipeline data gathering
 - **Google Gemini API** for grounding analysis in SRO pipeline
@@ -143,7 +165,7 @@ Next.js 16.1 + Turbopack
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.9+
 - [Bright Data](https://brightdata.com/) API key + AI Scraper dataset IDs
 - [OpenRouter](https://openrouter.ai/) API key
 
@@ -254,13 +276,13 @@ By default, **all your data stays in your browser** (IndexedDB). That's great fo
 | Route | Runtime | Purpose |
 |-------|---------|---------|
 | `POST /api/scrape` | Node.js | Bright Data AI Scrapers — query AI models for brand mentions |
-| `POST /api/analyze` | Edge | OpenRouter LLM inference — battlecards, niche queries |
+| `POST /api/analyze` | Node.js | OpenRouter LLM inference: battlecards, niche queries |
 | `POST /api/audit` | Node.js | AEO site audit — llms.txt, schema, BLUF, heading checks |
 | `POST /api/sro-analyze` | Node.js | SRO final analysis — synthesizes all data into score + recommendations |
 | `POST /api/serp` | Node.js | Bright Data SERP — organic search results for a keyword |
 | `POST /api/site-context` | Node.js | Homepage scrape + context extraction via OpenRouter |
 | `POST /api/unlocker` | Node.js | Bright Data Web Unlocker — single or batch URL scraping |
-| `POST /api/brightdata-platforms` | Node.js | 6-platform AI citation polling via Bright Data datasets |
+| `POST /api/brightdata-platforms` | Node.js | 5-platform AI citation polling via Bright Data datasets |
 | `POST /api/bulk-sro` | Node.js | SSE streaming — bulk SRO analysis across multiple keywords |
 | `GET/PUT/DELETE /api/state` | Node.js | Cloud KV store proxy — reads/writes to Supabase using service-role key (disabled when cloud not configured) |
 
@@ -270,7 +292,7 @@ All routes include input validation and error handling. Most routes use in-memor
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 16.1 + Turbopack |
+| Framework | Next.js 16 + Turbopack |
 | Language | TypeScript (strict) |
 | Styling | Tailwind CSS v4 with `@theme inline` |
 | Charts | Recharts |
@@ -282,6 +304,32 @@ All routes include input validation and error handling. Most routes use in-memor
 | SERP Data | Bright Data SERP API |
 | Web Scraping | Bright Data Web Unlocker |
 | Deployment | Vercel |
+
+## FAQ
+
+### Is GEO/AEO Tracker free?
+The software is free under the MIT license. Bright Data, OpenRouter and Gemini bill per API call, so your cost depends on how many prompts and engines you run.
+
+### Which AI engines does it track?
+It tracks 5 engines: ChatGPT, Perplexity, Gemini, Microsoft Copilot and Google AI Mode. Grok was removed in v1.5.0.
+
+### Where is my data stored?
+Results are stored in your browser (IndexedDB) by default. You can sync them to your own Supabase project. Prompts are sent to Bright Data and OpenRouter to collect and analyze the AI answers.
+
+### Do I need a Bright Data account?
+Yes, for live tracking: set `BRIGHT_DATA_KEY`. Without it the dashboard shows a sample dataset. An OpenRouter key adds the LLM analysis panels.
+
+### Can I run it on a schedule?
+Yes. The Automation tab has an in-app scheduler (hourly, every 6 hours, every 12 hours or daily) that runs while the browser tab is open, and explains how to set up Vercel Cron or GitHub Actions for unattended runs.
+
+### Is there an open-source alternative to Profound?
+Yes. GEO/AEO Tracker is MIT licensed and self-hosted. It tracks 5 engines, scores your visibility from 0 to 100, and shows citations and competitor battlecards. Profound covers up to 9 engines on its Enterprise plan, see [How it compares](#how-it-compares).
+
+## For AI agents and LLMs
+
+- [AGENTS.md](AGENTS.md) covers setup, commands, environment variables, architecture and conventions for coding agents such as Claude Code, Codex, Cursor and GitHub Copilot.
+- `CLAUDE.md` imports `AGENTS.md`.
+- The [live demo](https://geo-aeo-tracker-wine.vercel.app) serves [/llms.txt](https://geo-aeo-tracker-wine.vercel.app/llms.txt), [/llms-full.txt](https://geo-aeo-tracker-wine.vercel.app/llms-full.txt) and markdown pages when a request sends `Accept: text/markdown`.
 
 ## License
 

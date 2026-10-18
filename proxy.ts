@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { LINK_HEADER, isDemoDeploy, wantsMarkdown } from "@/lib/agent-discovery";
 
 /**
  * Best-effort IP rate limiting for all /api/* routes (Next.js 16 "proxy",
@@ -23,10 +24,25 @@ const LIMITS: Record<string, { limit: number; windowMs: number }> = {
 };
 const DEFAULT_LIMIT = { limit: 30, windowMs: 60_000 };
 
-export const config = { matcher: "/api/:path*" };
+export const config = { matcher: ["/api/:path*", "/", "/demo"] };
 
 export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
+  // Agent discovery for the public demo deploy only (see lib/agent-discovery.ts).
+  if (path === "/" || path === "/demo") {
+    if (!isDemoDeploy()) return NextResponse.next();
+    if (wantsMarkdown(req.headers.get("accept"))) {
+      const res = NextResponse.rewrite(new URL("/index.md", req.url));
+      res.headers.set("Vary", "Accept");
+      return res;
+    }
+    const res = NextResponse.next();
+    res.headers.set("Vary", "Accept");
+    if (path === "/") res.headers.set("Link", LINK_HEADER);
+    return res;
+  }
+
   const rule = LIMITS[path] ?? DEFAULT_LIMIT;
 
   const ip = (

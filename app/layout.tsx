@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { siteOrigin } from "@/lib/agent-discovery";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -14,9 +15,20 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const description =
+  "Open-source, self-hosted dashboard that tracks how ChatGPT, Perplexity, Gemini, Copilot and Google AI Mode mention your brand. Bring your own API keys and keep your data in your browser.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: "GEO/AEO Tracker",
-  description: "BYOK AEO/GEO intelligence dashboard with local-first persistence",
+  description,
+  openGraph: {
+    title: "GEO/AEO Tracker",
+    description,
+    type: "website",
+    url: "/",
+    siteName: "GEO/AEO Tracker",
+  },
 };
 
 /** Inline script to apply theme before first paint — prevents flash */

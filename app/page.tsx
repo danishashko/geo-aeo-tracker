@@ -1,4 +1,5 @@
 import { SovereignDashboard } from "@/components/sovereign-dashboard";
+import { isDemoDeploy } from "@/lib/agent-discovery";
 
 // Demo mode has two triggers.
 //
@@ -10,8 +11,7 @@ import { SovereignDashboard } from "@/components/sovereign-dashboard";
 // zero-config Vercel deploy lands on a working dashboard, and adding the key
 // is what switches it to live data. BRIGHT_DATA_KEY is read here in a server
 // component, so it is never shipped to the browser.
-const explicitDemo =
-  (process.env.NEXT_PUBLIC_DEMO_ONLY ?? "").trim().toLowerCase() === "true";
+const explicitDemo = isDemoDeploy();
 const hasBrightDataKey = Boolean((process.env.BRIGHT_DATA_KEY ?? "").trim());
 
 const isDemoOnly = explicitDemo || !hasBrightDataKey;

@@ -23,7 +23,7 @@
   <a href="#api-routes"><strong>API</strong></a>
 </p>
 
-GEO/AEO Tracker is an open-source alternative to Profound, Otterly and AthenaHQ. Each run scores your brand from 0 to 100 on mentions, position, frequency, citations and sentiment, and adds citation analysis, competitor battlecards and SRO analysis. It is for marketers, SEO teams and founders who want to own their data and their code. The software is free under the MIT license. Bright Data, OpenRouter and Gemini bill per API call. [Try the live demo](https://geo-aeo-tracker-wine.vercel.app).
+GEO/AEO Tracker is an open-source, self-hosted alternative to paid AI visibility tools such as Semrush AI Visibility and AthenaHQ. Each run scores your brand from 0 to 100 on mentions, position, frequency, citations and sentiment, and adds citation analysis, competitor battlecards and SRO analysis. It is for marketers, SEO teams and founders who want to own their data and their code. The software is free under the MIT license. Bright Data, OpenRouter and Gemini bill per API call. [Try the live demo](https://geo-aeo-tracker-wine.vercel.app).
 
 ---
 
@@ -37,7 +37,7 @@ GEO/AEO Tracker is an open-source alternative to Profound, Otterly and AthenaHQ.
 
 AI models are replacing traditional search for millions of queries. If your brand isn't visible in ChatGPT, Perplexity, or Gemini responses, you're invisible to a growing audience.
 
-Paid AI visibility tools run from $29 a month to custom enterprise quotes, and they keep your data on their servers. [How it compares](#how-it-compares) lists current prices and plan limits.
+Paid AI visibility plans in the table below run $165 to $295 a month, and they keep your data on their servers. [How it compares](#how-it-compares) lists current prices and plan limits.
 
 **GEO/AEO Tracker** is the alternative:
 
@@ -52,10 +52,8 @@ Paid AI visibility tools run from $29 a month to custom enterprise quotes, and t
 | Tool | Plan and price | Engines on that plan | Prompt allowance | Open source / self-hosted | Where data lives |
 |------|-------------|-----------------------|------------------|---------------------------|------------------|
 | **GEO/AEO Tracker** | Free (MIT), you pay API providers per call | ChatGPT, Perplexity, Gemini, Copilot, Google AI Mode | No plan cap, limited by your API spend | Yes, MIT | Your browser (optional own Supabase) |
-| [Otterly.AI Lite](https://otterly.ai/pricing) | $29/month monthly, $25/month billed annually | ChatGPT, Google AI Overviews, Perplexity, Microsoft Copilot (Claude, AI Mode and Gemini are paid add-ons) | 15 prompts | No | Vendor cloud |
 | [Semrush SEO + AI Search Starter](https://www.semrush.com/pricing/seo-ai-search/) (includes AI Visibility) | $199/month monthly, $165.17/month billed annually | Google Search, ChatGPT, Perplexity, Gemini and more | 50 prompts tracked daily | No | Vendor cloud |
 | [AthenaHQ Starter](https://www.athenahq.ai/pricing) | $295/month | 11 models including ChatGPT, Perplexity, AI Overviews, AI Mode, Gemini, Claude, Copilot, Grok, DeepSeek, Meta AI, Mistral | 3,600 credits a month (1 credit = 1 AI response) | No | Vendor cloud |
-| [Profound](https://www.tryprofound.com/pricing) | Free 7-day Trial (50 prompts daily, ChatGPT, Gemini, AI Overviews), then custom Enterprise pricing | Up to 9 engines on Enterprise | Custom | No | Vendor cloud |
 
 Prices as of October 2026.
 
@@ -330,8 +328,8 @@ Yes, for live tracking: set `BRIGHT_DATA_KEY`. Without it the dashboard shows a 
 ### Can I run it on a schedule?
 Yes. The Automation tab has an in-app scheduler (hourly, every 6 hours, every 12 hours or daily) that runs while the browser tab is open, and explains how to set up Vercel Cron or GitHub Actions for unattended runs.
 
-### Is there an open-source alternative to Profound?
-Yes. GEO/AEO Tracker is MIT licensed and self-hosted. It tracks 5 engines, scores your visibility from 0 to 100, and shows citations and competitor battlecards. Profound covers up to 9 engines on its Enterprise plan, see [How it compares](#how-it-compares).
+### Is there an open-source AI visibility tracker?
+Yes. GEO/AEO Tracker is MIT licensed and self-hosted. It tracks 5 engines, scores your visibility from 0 to 100, and shows citations and competitor battlecards. Paid plans are in [How it compares](#how-it-compares).
 
 ## For AI agents and LLMs
 

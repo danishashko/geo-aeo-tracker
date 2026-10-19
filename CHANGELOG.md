@@ -30,7 +30,7 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 - `AGENTS.md` (setup, env vars, routes, costs, conventions) for Claude Code, Codex, Cursor and Copilot, with `CLAUDE.md` and `.github/copilot-instructions.md` pointing to it.
 - Demo deploys serve `robots.txt` with AI-bot rules and `Content-Signal`, `sitemap.xml`, `llms.txt`, `llms-full.txt`, markdown on `Accept: text/markdown`, and `Link` headers. Private deploys get `Disallow: /` and none of these files.
-- README leads with what the tool is, compares it with Otterly, Semrush, AthenaHQ and Profound, and answers common questions.
+- README leads with what the tool is, compares it with Semrush and AthenaHQ, and answers common questions.
 
 ### 🧪 New: Rank Signal (paired A/B feature tests)
 

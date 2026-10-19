@@ -4,7 +4,33 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
-## [1.6.0] — Unreleased
+## [1.6.0] — 2026-10-19
+
+### 🔒 Security: public deploys can no longer run up your API bill
+
+- **Demo deploys answer 403 on every API route.** With `NEXT_PUBLIC_DEMO_ONLY=true`, `proxy.ts` now blocks all `/api/*` requests before any route runs. Before, only Rank Signal checked the flag, so a visitor could call scrape, SERP, unlocker and LLM routes and bill the deployer's keys.
+- **`/api/analyze` is no longer an open LLM proxy.** It ignores a client `model` unless it matches `OPENROUTER_MODEL` or the default, caps prompts at 20,000 characters and `maxTokens` at 2000, and keys its cache on a hash.
+- **SSRF guard rewritten** on `net.BlockList`. IPv4-mapped IPv6 (`[::ffff:7f00:1]`, `[::ffff:a9fe:a9fe]`), NAT64, 6to4 and site-local addresses were getting through. Every page scrape now passes the guard, one URL at a time.
+- **Rate limits read a client IP that is harder to spoof:** `x-vercel-forwarded-for`, then `x-real-ip`, then the last `x-forwarded-for` hop.
+- **Deadlines everywhere.** `maxDuration` on the long routes, timeouts on every upstream call, a 2 MB cap on audited pages, input length caps on every route, and upstream error bodies stay in server logs.
+- Next.js 16.4.2. `npm audit --omit=dev` reports 0 vulnerabilities.
+
+### 🐛 Fixes
+
+- **Saves are never lost to cloud sync.** Workspace state is written to the browser first; a failed cloud sync shows a notice instead of dropping the save.
+- **Bright Data error records no longer count as answers.** An error record used to echo the prompt back, which scored your brand as visible.
+- **Batch runs finish.** Jobs run 4 at a time and wait out a `429` instead of losing most of a 50-job batch to the rate limit.
+- **Whole-word scoring.** "Arc" no longer matches "search", "bad" no longer matches "badge", and overlapping aliases count once. Weights are unchanged, so some scores shift.
+- **SRO tab:** Analyze is off in the demo, and the Gemini Grounding stage no longer makes a paid call it threw away. Grounding runs through `/api/bulk-sro`.
+- **Rank Signal:** a stream that ends early saves its partial trials, failed SERP top-ups are cached for 10 minutes, and dated-passage detection no longer matches words like "market 2024".
+- New workspaces keep their brand name. The demo banner says changes are not saved.
+- Mobile layouts fixed on Documentation, Citations, Citation Opportunities and Automation. Raw markdown no longer shows in Responses.
+
+### 🤖 New: agent readiness
+
+- `AGENTS.md` (setup, env vars, routes, costs, conventions) for Claude Code, Codex, Cursor and Copilot, with `CLAUDE.md` and `.github/copilot-instructions.md` pointing to it.
+- Demo deploys serve `robots.txt` with AI-bot rules and `Content-Signal`, `sitemap.xml`, `llms.txt`, `llms-full.txt`, markdown on `Accept: text/markdown`, and `Link` headers. Private deploys get `Disallow: /` and none of these files.
+- README leads with what the tool is, compares it with Otterly, Semrush, AthenaHQ and Profound, and answers common questions.
 
 ### 🧪 New: Rank Signal (paired A/B feature tests)
 

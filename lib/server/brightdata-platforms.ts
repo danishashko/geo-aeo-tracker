@@ -1,5 +1,4 @@
 import type {
-  SROPlatform,
   PlatformConfig,
   PlatformResult,
   PlatformCitation,

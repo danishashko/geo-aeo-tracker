@@ -28,7 +28,7 @@ GEO/AEO Tracker is an open-source alternative to Profound, Otterly and AthenaHQ.
 ---
 
 > 🌐 **Built with [Bright Data](https://brightdata.com/?utm_source=geo-tracker-os)** — the world's leading web data platform.
-> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 5 AI models.
+> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 5 AI engines.
 > [Get your API key →](https://brightdata.com/?utm_source=geo-tracker-os)
 
 ---
@@ -84,7 +84,7 @@ GEO/AEO Tracker is the better pick when you want:
 | 🔗 **Citations** | Domain-grouped citation frequency analysis |
 | 🎯 **Citation Opportunities** | URLs where competitors get cited but you don't, with outreach briefs |
 | ⚔️ **Competitor Battlecards** | AI-generated side-by-side competitor analysis with strengths/weaknesses |
-| 🏥 **AEO Audit** | Site readiness check: llms.txt, Schema.org, BLUF density, heading structure |
+| 🏥 **AEO Audit** | Site readiness check: llms.txt, AI crawler access (robots.txt), Schema.org, BLUF density, heading structure |
 | 📡 **SRO Analysis** | Deep pipeline: Cross-Platform Citations → SERP → Page Scraping → Site Context → LLM Analysis (Gemini Grounding runs in the `bulk-sro` API). Produces SRO Score (0–100), prioritized recommendations, content gaps & competitor insights |
 | ⏱️ **Automation** | Cron / GitHub Actions templates for scheduled runs |
 | 📖 **Documentation** | Searchable 19-section guide covering every feature |
@@ -210,6 +210,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ### Validate Setup
 
 ```bash
+npm test                # Unit tests (robots.txt parser)
 npm run test:scraper    # Test Bright Data API connection
 npm run build           # Full production build check
 npm run lint            # ESLint

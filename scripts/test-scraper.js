@@ -1,12 +1,13 @@
 /* eslint-disable no-console */
 
+// [provider, env override, Bright Data public dataset ID] — keep the defaults in
+// sync with lib/server/brightdata-scraper.ts.
 const providerEnv = [
-  ["chatgpt", "BRIGHT_DATA_DATASET_CHATGPT"],
-  ["perplexity", "BRIGHT_DATA_DATASET_PERPLEXITY"],
-  ["copilot", "BRIGHT_DATA_DATASET_COPILOT"],
-  ["gemini", "BRIGHT_DATA_DATASET_GEMINI"],
-  ["google_ai", "BRIGHT_DATA_DATASET_GOOGLE_AI"],
-  ["grok", "BRIGHT_DATA_DATASET_GROK"],
+  ["chatgpt", "BRIGHT_DATA_DATASET_CHATGPT", "gd_m7aof0k82r803d5bjm"],
+  ["perplexity", "BRIGHT_DATA_DATASET_PERPLEXITY", "gd_m7dhdot1vw9a7gc1n"],
+  ["copilot", "BRIGHT_DATA_DATASET_COPILOT", "gd_m7di5jy6s9geokz8w"],
+  ["gemini", "BRIGHT_DATA_DATASET_GEMINI", "gd_mbz66arm2mf9cu856y"],
+  ["google_ai", "BRIGHT_DATA_DATASET_GOOGLE_AI", "gd_mcswdt6z2elth3zqr2"],
 ];
 
 const providerBaseUrl = {
@@ -15,27 +16,29 @@ const providerBaseUrl = {
   copilot: "https://copilot.microsoft.com/",
   gemini: "https://gemini.google.com/",
   google_ai: "https://www.google.com/",
-  grok: "https://grok.com/",
 };
 
+// Prefer an engine with an explicit override; otherwise test ChatGPT on its
+// public dataset, the same fallback the app uses.
 function chooseProvider() {
   for (const [provider, envName] of providerEnv) {
     if (process.env[envName]) {
       return { provider, datasetId: process.env[envName] };
     }
   }
-  return null;
+  const [provider, , datasetId] = providerEnv[0];
+  return { provider, datasetId };
 }
 
 async function run() {
   const apiKey = process.env.BRIGHT_DATA_KEY;
   const selected = chooseProvider();
 
-  if (!apiKey || !selected) {
+  if (!apiKey) {
     const mock = {
       mode: "mock",
       message:
-        "No BRIGHT_DATA_KEY and provider dataset ID found. Set .env values to run live scraper test.",
+        "No BRIGHT_DATA_KEY found. Set it in .env to run the live scraper test.",
       sample: {
         answer: "Mock response: GEO/AEO Tracker scraper pipeline is wired.",
         sources: ["https://docs.brightdata.com/datasets/scrapers/scrapers-library/ai-scrapers"],

@@ -40,16 +40,13 @@ import type {
   DriftAlert,
   Provider,
   RunDelta,
-  ScheduleInterval,
   ScrapeRun,
   TabKey,
-  TaggedPrompt,
   Workspace,
 } from "@/components/dashboard/types";
 import {
   ALL_PROVIDERS,
   PROVIDER_LABELS,
-  SCHEDULE_OPTIONS,
   COUNTRIES,
   tabs,
 } from "@/components/dashboard/types";
@@ -406,7 +403,7 @@ export function SovereignDashboard({
       setWorkspaces([defaultWs]);
       setActiveWsId("default");
     }
-  }, [applyTheme]);
+  }, [applyTheme, demoMode]);
 
   /** Load app state for active workspace */
   useEffect(() => {
@@ -582,7 +579,6 @@ export function SovereignDashboard({
       `Auto-run complete: ${allRuns.length} results.${newAlerts.length > 0 ? ` ${newAlerts.length} drift alert${newAlerts.length > 1 ? "s" : ""} triggered.` : ""}`,
     );
     setBusy(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Set up / tear down the scheduler interval */
@@ -603,7 +599,7 @@ export function SovereignDashboard({
         schedulerRef.current = null;
       }
     };
-  }, [state.scheduleEnabled, state.scheduleIntervalMs, runScheduledBatch]);
+  }, [demoMode, state.scheduleEnabled, state.scheduleIntervalMs, runScheduledBatch]);
 
   function dismissAlert(id: string) {
     setState((prev) => ({

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test \"lib/**/*.test.ts\"",
+    "test": "tsx --test \"lib/**/*.test.ts\" \"tests/**/*.test.mjs\"",
     "test:scraper": "node --env-file=.env scripts/test-scraper.js",
     "test:pillar": "node scripts/test-pillar.js"
   },

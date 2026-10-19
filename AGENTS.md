@@ -15,14 +15,14 @@ npm run dev              # http://localhost:3000
 | `npm run dev` | Next dev server (Turbopack) | No. An empty env shows the demo dataset |
 | `npm run build` | Production build | No. `NEXT_PUBLIC_*` vars are inlined here |
 | `npm run start` | Serve the production build | No |
-| `npm test` | `tsx --test "lib/**/*.test.ts"` (Node test runner, about 140 tests across `lib/`, `lib/client`, `lib/server` and `lib/shared`) | No, offline |
-| `npm run lint` | ESLint (`eslint.config.mjs`, next core-web-vitals + typescript) | No. Currently 0 errors, 8 warnings |
+| `npm test` | `tsx --test "lib/**/*.test.ts" "tests/**/*.test.mjs"` (Node test runner, about 155 tests) | No, offline |
+| `npm run lint` | ESLint (`eslint.config.mjs`, next core-web-vitals + typescript) | No. Currently clean, 0 warnings |
 | `npm run test:pillar -- 8` | Checks that the files for a pillar number (1 to 8) exist | No, offline |
 | `npm run test:scraper` | One live Bright Data AI-scraper call | Yes, bills Bright Data |
 
 Free type check: `npx tsc --noEmit` (passes clean).
 
-Tests go in `lib/**/*.test.ts` and use `node:test` through `tsx`. Also run `npx tsc --noEmit`, `npm run lint` and `npm run build`.
+Tests go in `lib/**/*.test.ts` (next to the code) or `tests/**/*.test.mjs` and use `node:test` through `tsx`. Also run `npx tsc --noEmit`, `npm run lint` and `npm run build`.
 
 ## Environment variables
 

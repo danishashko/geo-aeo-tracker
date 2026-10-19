@@ -133,7 +133,7 @@ const FEATURE_TABS: Array<[string, string]> = [
   ],
   [
     "AEO Audit",
-    "Site readiness check: llms.txt, Schema.org, BLUF density, heading structure",
+    "Site readiness check: llms.txt, AI crawler access (robots.txt), Schema.org, BLUF density, heading structure",
   ],
   [
     "SRO Analysis",

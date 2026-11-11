@@ -1,6 +1,6 @@
 {
   "name": "geo-aeo-tracker",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "AI visibility tracker and AEO checker CLI. Check how ChatGPT, Perplexity, Gemini and Google AI Mode mention your brand, and audit any page for AI search.",
   "type": "module",
   "bin": {

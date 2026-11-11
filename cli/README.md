@@ -1,5 +1,13 @@
 # geo-aeo-tracker
 
+[![npm version](https://img.shields.io/npm/v/geo-aeo-tracker?color=cb3837&logo=npm)](https://www.npmjs.com/package/geo-aeo-tracker)
+[![node](https://img.shields.io/node/v/geo-aeo-tracker?color=339933&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/geo-aeo-tracker?activeTab=dependencies)
+[![AI engines](https://img.shields.io/badge/AI%20engines-ChatGPT%20%C2%B7%20Perplexity%20%C2%B7%20Gemini%20%C2%B7%20AI%20Mode-7c3aed)](#track-your-brand-in-ai-answers)
+[![agent ready](https://img.shields.io/badge/agent%20ready-Agent%20Skill%20%2B%20llms.txt-0ea5e9)](#for-ai-agents)
+[![license](https://img.shields.io/npm/l/geo-aeo-tracker?color=blue)](https://github.com/danishashko/geo-aeo-tracker/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/danishashko/geo-aeo-tracker?style=social)](https://github.com/danishashko/geo-aeo-tracker)
+
 AI visibility tracker and AEO checker for your terminal. Check how ChatGPT, Perplexity, Gemini and Google AI Mode mention your brand, run a GEO/AEO audit on any page, and get your Google rank.
 
 This is the CLI of [GEO/AEO Tracker](https://github.com/danishashko/geo-aeo-tracker), the open-source, self-hosted AI visibility dashboard. It runs on your own [Bright Data](https://brightdata.com/?utm_source=geo-tracker-os) key; the audit needs no key.

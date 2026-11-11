@@ -4,6 +4,13 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
+## [CLI 1.9.1] - 2026-11-11
+
+- npm page: badges for version, Node, zero dependencies, AI engines, agent readiness, license and GitHub stars.
+- GitHub README links to the CLI on npm.
+
+---
+
 ## [1.9.0] - 2026-11-11
 
 ### 🤖 CLI built for AI agents

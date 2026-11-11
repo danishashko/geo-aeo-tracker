@@ -6,6 +6,7 @@
   <a href="https://brightdata.com/?utm_source=geo-tracker-os"><img src="https://img.shields.io/badge/Powered%20by-Bright%20Data-00d4aa?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=" alt="Powered by Bright Data"/></a>
   <a href="https://geo-aeo-tracker-wine.vercel.app"><img src="https://img.shields.io/badge/Live%20Demo-▶-blue?style=for-the-badge" alt="Live Demo"/></a>
   <a href="#deploy-to-vercel"><img src="https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel" alt="Deploy to Vercel"/></a>
+  <a href="https://www.npmjs.com/package/geo-aeo-tracker"><img src="https://img.shields.io/npm/v/geo-aeo-tracker?style=for-the-badge&logo=npm&label=CLI&color=cb3837" alt="CLI on npm"/></a>
 </p>
 
 <h1 align="center">GEO/AEO Tracker</h1>
@@ -97,7 +98,7 @@ GEO/AEO Tracker is the better pick when you want:
 - 🧪 **Rank Signal**: paired A/B tests inside the SRO tab that measure whether one text feature (a number, a named source, a freshness clause, …) changes which passage a model picks
 - 📈 **Visibility scoring** (0–100): brand mentions, position, frequency, citations, sentiment
 - 🔌 **MCP server**: ask your AI agent to check brand visibility, pull Google results or audit a page, through `/api/mcp` on your own deploy
-- ⌨️ **CLI**: `npx geo-aeo-tracker` checks your brand's AI rank and runs the AEO audit from a terminal or a CI job
+- ⌨️ **CLI**: [`npx geo-aeo-tracker`](https://www.npmjs.com/package/geo-aeo-tracker) checks your brand's AI rank and runs the AEO audit from a terminal or a CI job
 - 🔔 **Drift alerts**: automatic notifications when your score changes significantly
 - ⏰ **Scheduled auto-runs**: configurable interval-based batch scraping
 - 🚀 **Batch runs**: every prompt × engine combo, 4 at a time to stay inside the rate limit
@@ -334,7 +335,7 @@ Good to know:
 
 ## CLI
 
-The same checks run from your terminal with `npx`, no deploy and no dashboard. Bring your own Bright Data key; the audit needs none.
+The same checks run from your terminal with `npx`, no deploy and no dashboard. The package is [`geo-aeo-tracker` on npm](https://www.npmjs.com/package/geo-aeo-tracker). Bring your own Bright Data key; the audit needs none.
 
 ```bash
 export BRIGHT_DATA_KEY=your_key

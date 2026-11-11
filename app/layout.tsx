@@ -20,10 +20,10 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
-  title: "GEO/AEO Tracker",
+  title: "GEO/AEO Tracker: open-source AI visibility tracker",
   description,
   openGraph: {
-    title: "GEO/AEO Tracker",
+    title: "GEO/AEO Tracker: open-source AI visibility tracker",
     description,
     type: "website",
     url: "/",

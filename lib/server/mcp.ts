@@ -2,50 +2,24 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
   AI_SCRAPER_PROVIDERS,
-  getDatasetId,
-  runAiScraper,
   type AiScraperProvider,
 } from "./brightdata-scraper";
-import { fetchSerp } from "./serp";
-import { withTimeout } from "./http";
 import type { SerpResult } from "./sro-types";
-import { calcVisibilityScore, detectSentiment, findMentions } from "../scoring";
+import {
+  ENGINE_LABELS,
+  ENGINE_TIMEOUT_MS,
+  checkVisibility,
+  defaultDatasetId,
+  defaultScrape,
+  defaultSerp,
+  listEngines,
+  serpOrThrow,
+  timeoutFromEnv,
+  type ScrapeFn,
+} from "./visibility";
 
-export const MCP_SERVER_VERSION = "1.7.0";
-
-const ENGINE_LABELS: Record<AiScraperProvider, string> = {
-  chatgpt: "ChatGPT",
-  perplexity: "Perplexity",
-  gemini: "Gemini",
-  google_ai: "Google AI Mode",
-};
-
-// Known outages from https://docs.brightdata.com/release-notes. Shown by
-// list_engines and attached to errors so an agent can tell an outage from a bug.
-const ENGINE_NOTES: Partial<Record<AiScraperProvider, string>> = {
-  perplexity:
-    "Bright Data listed the Perplexity scraper as temporarily unavailable on 2026-11-10. Runs may fail until it is restored.",
-};
-
-const RETIRED_ENGINES = [
-  {
-    id: "copilot",
-    label: "Microsoft Copilot",
-    reason: "Bright Data no longer runs a Copilot scraper.",
-  },
-  {
-    id: "grok",
-    label: "Grok",
-    reason:
-      "Bright Data lists its Grok scraper as unavailable since 2026-06-14.",
-  },
-];
-
-type ScrapeFn = (req: {
-  provider: AiScraperProvider;
-  prompt: string;
-  country?: string;
-}) => Promise<{ answer: string; sources: string[]; cached: boolean }>;
+export const MCP_SERVER_VERSION = "1.8.0";
+export { ENGINE_TIMEOUT_MS };
 
 export interface McpDeps {
   scrape: ScrapeFn;
@@ -57,22 +31,15 @@ export interface McpDeps {
   engineTimeoutMs?: number;
 }
 
-// Bright Data can poll a stuck snapshot for ~10 minutes (an engine outage looks
-// like this). Cap each engine so the others still come back inside the route's
-// 300s maxDuration.
-export const ENGINE_TIMEOUT_MS = 240_000;
-
 /** MCP_ENGINE_TIMEOUT_MS, clamped to 10s-900s. Above 280s only off Vercel. */
 export function engineTimeoutFromEnv(): number {
-  const n = Number(process.env.MCP_ENGINE_TIMEOUT_MS);
-  if (!Number.isFinite(n) || n <= 0) return ENGINE_TIMEOUT_MS;
-  return Math.min(900_000, Math.max(10_000, Math.round(n)));
+  return timeoutFromEnv(process.env.MCP_ENGINE_TIMEOUT_MS);
 }
 
 export const defaultMcpDeps: Omit<McpDeps, "audit"> = {
-  scrape: (req) => runAiScraper({ ...req, requireSources: true }),
-  serp: fetchSerp,
-  datasetId: getDatasetId,
+  scrape: defaultScrape,
+  serp: defaultSerp,
+  datasetId: defaultDatasetId,
 };
 
 function json(value: unknown) {
@@ -90,16 +57,6 @@ function fail(message: string) {
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
-}
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url.includes("://") ? url : `https://${url}`).hostname
-      .replace(/^www\./, "")
-      .toLowerCase();
-  } catch {
-    return "";
-  }
 }
 
 const EngineEnum = z.enum(AI_SCRAPER_PROVIDERS);
@@ -125,17 +82,7 @@ export function createMcpServer(deps: McpDeps): McpServer {
         "List the AI answer engines this server can query, with their Bright Data dataset IDs and any known outage. Free, makes no API call.",
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    async () =>
-      json({
-        engines: AI_SCRAPER_PROVIDERS.map((id) => ({
-          id,
-          label: ENGINE_LABELS[id],
-          datasetId: deps.datasetId(id),
-          ...(ENGINE_NOTES[id] ? { note: ENGINE_NOTES[id] } : {}),
-        })),
-        retired: RETIRED_ENGINES,
-        outages: "https://docs.brightdata.com/release-notes",
-      }),
+    async () => json(listEngines(deps.datasetId)),
   );
 
   server.registerTool(
@@ -187,129 +134,40 @@ export function createMcpServer(deps: McpDeps): McpServer {
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async (args, extra) => {
-      const engines = [...new Set(args.engines ?? AI_SCRAPER_PROVIDERS)];
-      const brandTerms = [args.brand, ...(args.aliases ?? [])]
-        .map((t) => t.trim())
-        .filter(Boolean);
-      const competitorTerms = (args.competitors ?? [])
-        .map((t) => t.trim())
-        .filter(Boolean);
-      const websites = args.websites ?? [];
-      const siteHosts = websites.map(hostOf).filter(Boolean);
-
       // Progress notifications let a client that sent a progressToken show
       // engines finishing, and reset its request timeout on each one.
       const progressToken = extra._meta?.progressToken;
-      let done = 0;
-      const reportDone = async (provider: AiScraperProvider) => {
-        done += 1;
-        if (progressToken === undefined) return;
-        await extra
-          .sendNotification({
-            method: "notifications/progress",
-            params: {
-              progressToken,
-              progress: done,
-              total: engines.length,
-              message: `${ENGINE_LABELS[provider]} finished`,
-            },
-          })
-          .catch(() => {});
-      };
-
-      const timeoutMs = deps.engineTimeoutMs ?? engineTimeoutFromEnv();
-      const settled = await Promise.allSettled(
-        engines.map((provider) =>
-          withTimeout(
-            deps.scrape({
-              provider,
-              prompt: args.prompt,
-              country: args.country,
-            }),
-            timeoutMs,
-            ENGINE_LABELS[provider],
-          ).finally(() => reportDone(provider)),
-        ),
+      const report = await checkVisibility(
+        {
+          prompt: args.prompt,
+          brand: args.brand,
+          aliases: args.aliases,
+          competitors: args.competitors,
+          websites: args.websites,
+          engines: args.engines,
+          country: args.country,
+          includeAnswer: args.include_answer,
+        },
+        {
+          scrape: deps.scrape,
+          timeoutMs: deps.engineTimeoutMs ?? engineTimeoutFromEnv(),
+          onEngineDone: (engine, done, total) =>
+            progressToken === undefined
+              ? undefined
+              : extra.sendNotification({
+                  method: "notifications/progress",
+                  params: {
+                    progressToken,
+                    progress: done,
+                    total,
+                    message: `${ENGINE_LABELS[engine]} finished`,
+                  },
+                }),
+        },
       );
-
-      const results = settled.map((s, i) => {
-        const engine = engines[i];
-        const label = ENGINE_LABELS[engine];
-        if (s.status === "rejected") {
-          return {
-            engine,
-            label,
-            status: "error" as const,
-            error: /timed out after/.test(errorMessage(s.reason))
-              ? `${label} did not answer within ${Math.round(timeoutMs / 1000)}s. Bright Data's ${label} scraper is slow or down right now. Try again, or leave this engine out.`
-              : errorMessage(s.reason),
-            ...(ENGINE_NOTES[engine] ? { note: ENGINE_NOTES[engine] } : {}),
-          };
-        }
-        const { answer, sources, cached } = s.value;
-        if (!answer.trim()) {
-          return {
-            engine,
-            label,
-            status: "empty" as const,
-            error: "Bright Data returned no answer text for this prompt.",
-            ...(ENGINE_NOTES[engine] ? { note: ENGINE_NOTES[engine] } : {}),
-          };
-        }
-        const citedSite = sources.filter((src) => {
-          const h = hostOf(src);
-          return siteHosts.some((d) => h === d || h.endsWith(`.${d}`));
-        });
-        return {
-          engine,
-          label,
-          status: "ok" as const,
-          visibilityScore: calcVisibilityScore(
-            answer,
-            sources,
-            brandTerms,
-            websites,
-          ),
-          sentiment: detectSentiment(answer, brandTerms),
-          brandMentions: findMentions(answer, brandTerms),
-          competitorMentions: findMentions(answer, competitorTerms),
-          websiteCited: citedSite.length > 0,
-          citedBrandUrls: citedSite,
-          sourceCount: sources.length,
-          sources: sources.slice(0, 25),
-          answer: args.include_answer
-            ? answer
-            : answer.length > 600
-              ? `${answer.slice(0, 600)}…`
-              : answer,
-          cached,
-        };
-      });
-
-      const ok = results.filter((r) => r.status === "ok");
-      const summary = {
-        prompt: args.prompt,
-        brand: args.brand,
-        country: args.country ?? "US",
-        enginesAnswered: ok.length,
-        enginesFailed: results.length - ok.length,
-        enginesMentioningBrand: ok
-          .filter((r) => r.brandMentions.length > 0)
-          .map((r) => r.engine),
-        averageVisibility: ok.length
-          ? Math.round(
-              ok.reduce((sum, r) => sum + r.visibilityScore, 0) / ok.length,
-            )
-          : null,
-      };
-
-      if (ok.length === 0) {
-        return {
-          ...json({ summary, results }),
-          isError: true,
-        };
-      }
-      return json({ summary, results });
+      return report.summary.enginesAnswered === 0
+        ? { ...json(report), isError: true }
+        : json(report);
     },
   );
 
@@ -338,17 +196,7 @@ export function createMcpServer(deps: McpDeps): McpServer {
     },
     async ({ keyword, target_url, limit }) => {
       try {
-        let result = await deps.serp(keyword, target_url ?? "");
-        // Bright Data now and then answers with a body that is not parsed
-        // JSON; one retry clears it. Only a failed call is retried.
-        if (result.totalResults === 0) {
-          result = await deps.serp(keyword, target_url ?? "");
-        }
-        if (result.totalResults === 0) {
-          return fail(
-            "Google returned no organic results twice. If this keeps happening, check BRIGHT_DATA_KEY and that BRIGHT_DATA_SERP_ZONE names a SERP API zone on your account. The server log has the upstream error.",
-          );
-        }
+        const result = await serpOrThrow(deps.serp, keyword, target_url ?? "");
         return json({
           keyword: result.keyword,
           targetRank: target_url ? result.targetRank : undefined,

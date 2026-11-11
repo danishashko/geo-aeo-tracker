@@ -4,6 +4,23 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
+## [1.8.0] - 2026-11-11
+
+### ⌨️ New: CLI on npm
+
+- **`npx geo-aeo-tracker`** runs the tracker from a terminal with your own Bright Data key, no deploy needed. `check` scores your brand in every AI engine, `audit` runs the GEO/AEO page audit (free), `serp` gives Google results and your rank, and `engines` lists engines and outages.
+- `--json` on every command. `check` and `audit` take `--min-score <n>` and exit 3 below it, for CI. Reads `.env.local` and `.env` from the current folder.
+- One bundled file with no runtime dependencies. Source in `cli/`; the audit, scoring and engine code is shared with the dashboard and the MCP server (`lib/server/audit.ts`, `lib/server/visibility.ts`).
+
+### 🐛 Fixed: Google rank tracking
+
+- **Your rank was missed on most queries.** Google now wraps result links in `google.com/goto` redirects, so every result looked like google.com and `targetRank` came back empty. The real site is now read from Google's display link. This fixes rank in the dashboard, Bulk SRO, Rank Signal, the MCP server and the CLI.
+- **AEO audit: sitemaps were missed on many sites.** The check only accepted a plain `<urlset>` at `/sitemap.xml`, so a sitemap index failed, and so did a sitemap declared only in robots.txt. It now accepts both and reads up to two `Sitemap:` lines from robots.txt. brightdata.com goes from 75 to 80.
+- The README banner and the in-app docs still listed Copilot and 5 engines; both now show the 4 engines.
+- **The SERP retry now works.** After a failed query Bright Data answers with a text body asking to wait 15 seconds, so the immediate retry from v1.7.0 always failed too. `fetchSerp` now retries once after 16 seconds, for every caller.
+
+---
+
 ## [1.7.0] - 2026-11-10
 
 ### 🔌 New: MCP server

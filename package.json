@@ -1,15 +1,16 @@
 {
   "name": "llm-tracker",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test \"lib/**/*.test.ts\" \"tests/**/*.test.mjs\"",
+    "test": "tsx --test \"lib/**/*.test.ts\" \"cli/**/*.test.ts\" \"tests/**/*.test.mjs\"",
     "test:scraper": "node --env-file=.env scripts/test-scraper.js",
-    "test:pillar": "node scripts/test-pillar.js"
+    "test:pillar": "node scripts/test-pillar.js",
+    "build:cli": "node scripts/build-cli.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
@@ -27,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",

@@ -49,3 +49,7 @@ guidelines.md
 
 # session handoff notes (auto-generated, not part of the app)
 HANDOFF.md
+
+# CLI build output
+/cli/dist/
+/cli/LICENSE

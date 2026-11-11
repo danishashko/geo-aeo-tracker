@@ -314,16 +314,14 @@ function pagePassages(
   );
   // Array.prototype.sort is stable, so ties keep page order.
   return chunks
-    .map(
-      (c, i): Passage => ({
-        text: c.text,
-        heading: c.heading,
-        origin,
-        domain: page.domain,
-        hash: hashPassage(c.text),
-        score: scores[i],
-      }),
-    )
+    .map((c, i): Passage => ({
+      text: c.text,
+      heading: c.heading,
+      origin,
+      domain: page.domain,
+      hash: hashPassage(c.text),
+      score: scores[i],
+    }))
     .sort((a, b) => b.score - a.score)
     .slice(0, TOP_PER_PAGE);
 }
@@ -413,7 +411,7 @@ async function serpExpansionPages(
   // fetchSerp and scrapePages take no signal yet; the extra argument is ignored
   // by them and honoured by injected deps.
   const serpFn: NonNullable<ExpandDeps["fetchSerp"]> =
-    deps.fetchSerp ?? fetchSerp;
+    deps.fetchSerp ?? ((keyword, targetUrl) => fetchSerp(keyword, targetUrl));
   const scrapeFn: NonNullable<ExpandDeps["scrapePages"]> =
     deps.scrapePages ?? scrapePages;
   // The SERP API regularly returns an unparsable body or times out

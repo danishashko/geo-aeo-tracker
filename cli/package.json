@@ -1,0 +1,44 @@
+{
+  "name": "geo-aeo-tracker",
+  "version": "1.8.1",
+  "description": "AI visibility tracker and AEO checker CLI. Check how ChatGPT, Perplexity, Gemini and Google AI Mode mention your brand, and audit any page for AI search.",
+  "type": "module",
+  "bin": {
+    "geo-aeo-tracker": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.12"
+  },
+  "keywords": [
+    "ai-visibility",
+    "ai-visibility-tracker",
+    "aeo",
+    "aeo-checker",
+    "geo",
+    "generative-engine-optimization",
+    "answer-engine-optimization",
+    "llm-visibility",
+    "llm-seo",
+    "ai-rank-tracker",
+    "chatgpt",
+    "perplexity",
+    "gemini",
+    "google-ai-mode",
+    "brand-monitoring",
+    "seo",
+    "cli",
+    "bright-data"
+  ],
+  "homepage": "https://github.com/danishashko/geo-aeo-tracker#cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danishashko/geo-aeo-tracker.git",
+    "directory": "cli"
+  },
+  "bugs": "https://github.com/danishashko/geo-aeo-tracker/issues",
+  "author": "Daniel Shashko",
+  "license": "MIT"
+}

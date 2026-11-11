@@ -244,7 +244,7 @@ test("google_serp: empty result is an error, results are capped by limit", async
     }),
   );
   assert.equal(e.isError, true);
-  assert.match(e.text, /twice[\s\S]*SERP_ZONE/);
+  assert.match(e.text, /retry[\s\S]*SERP_ZONE/);
 
   const serp: SerpResult = {
     keyword: "meal kits",
@@ -351,35 +351,33 @@ test("check_visibility: a stuck engine times out alone, with progress per engine
   );
   const { isError, data } = body(res);
   assert.equal(isError, false);
-  const p = data.results.find((r: { engine: string }) => r.engine === "perplexity");
+  const p = data.results.find(
+    (r: { engine: string }) => r.engine === "perplexity",
+  );
   assert.equal(p.status, "error");
   assert.match(p.error, /Perplexity did not answer within 0s/);
   assert.equal(data.summary.enginesAnswered, 3);
   assert.deepEqual(progress, [1, 2, 3, 4]);
 });
 
-test("google_serp retries an empty result once", async () => {
+test("google_serp calls the SERP once (fetchSerp does the retry)", async () => {
   let calls = 0;
   const serp = async (keyword: string): Promise<SerpResult> => {
     calls += 1;
     return {
       keyword,
-      totalResults: calls === 1 ? 0 : 1,
-      organicResults:
-        calls === 1
-          ? []
-          : ([
-              { position: 1, title: "a", url: "https://a.com", description: "", domain: "a.com" },
-            ] as SerpResult["organicResults"]),
+      totalResults: 0,
+      organicResults: [],
       targetRank: null,
       topCompetitors: [],
     };
   };
   const client = await connect(fakeDeps(ALL_OK, { serp }).deps);
-  const r = body(await client.callTool({ name: "google_serp", arguments: { keyword: "x" } }));
-  assert.equal(r.isError, false);
-  assert.equal(calls, 2);
-  assert.equal(r.data.organicResults.length, 1);
+  const r = body(
+    await client.callTool({ name: "google_serp", arguments: { keyword: "x" } }),
+  );
+  assert.equal(r.isError, true);
+  assert.equal(calls, 1);
 });
 
 test("engineTimeoutFromEnv clamps the override", () => {

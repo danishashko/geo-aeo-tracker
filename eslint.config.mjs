@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "scripts/*.js",
+    // Bundled CLI output (npm run build:cli).
+    "cli/dist/**",
   ]),
 ]);
 

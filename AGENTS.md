@@ -1,6 +1,6 @@
 # AGENTS.md
 
-GEO/AEO Tracker measures how often AI answer engines (ChatGPT, Perplexity, Gemini, Google AI Mode) mention and cite a brand. It also serves a remote MCP server at `/api/mcp`. It is a Next.js 16 App Router app on React 19 and TypeScript, styled with Tailwind 4, with zod for request validation and Recharts for charts. State lives in the browser (idb-keyval over IndexedDB) by default, with optional Supabase sync. MIT licensed. The package name is `llm-tracker`.
+GEO/AEO Tracker measures how often AI answer engines (ChatGPT, Perplexity, Gemini, Google AI Mode) mention and cite a brand. It also serves a remote MCP server at `/api/mcp` and ships a CLI on npm (`geo-aeo-tracker`, source in `cli/`). It is a Next.js 16 App Router app on React 19 and TypeScript, styled with Tailwind 4, with zod for request validation and Recharts for charts. State lives in the browser (idb-keyval over IndexedDB) by default, with optional Supabase sync. MIT licensed. The package name is `llm-tracker`.
 
 ## Setup and commands
 
@@ -15,14 +15,15 @@ npm run dev              # http://localhost:3000
 | `npm run dev` | Next dev server (Turbopack) | No. An empty env shows the demo dataset |
 | `npm run build` | Production build | No. `NEXT_PUBLIC_*` vars are inlined here |
 | `npm run start` | Serve the production build | No |
-| `npm test` | `tsx --test "lib/**/*.test.ts" "tests/**/*.test.mjs"` (Node test runner, about 170 tests) | No, offline |
+| `npm test` | `tsx --test "lib/**/*.test.ts" "cli/**/*.test.ts" "tests/**/*.test.mjs"` (Node test runner, about 190 tests) | No, offline |
+| `npm run build:cli` | Bundles `cli/src` with esbuild into `cli/dist/cli.js` (one file, no runtime deps) | No |
 | `npm run lint` | ESLint (`eslint.config.mjs`, next core-web-vitals + typescript) | No. Currently clean, 0 warnings |
 | `npm run test:pillar -- 8` | Checks that the files for a pillar number (1 to 8) exist | No, offline |
 | `npm run test:scraper` | One live Bright Data AI-scraper call | Yes, bills Bright Data |
 
 Free type check: `npx tsc --noEmit` (passes clean).
 
-Tests go in `lib/**/*.test.ts` (next to the code) or `tests/**/*.test.mjs` and use `node:test` through `tsx`. Also run `npx tsc --noEmit`, `npm run lint` and `npm run build`.
+Tests go in `lib/**/*.test.ts` or `cli/**/*.test.ts` (next to the code) or `tests/**/*.test.mjs` and use `node:test` through `tsx`. Also run `npx tsc --noEmit`, `npm run lint` and `npm run build`.
 
 ## Environment variables
 
@@ -78,8 +79,8 @@ All routes are unauthenticated except `state`. Limits are requests per IP per pa
 | `app/api/serp/route.ts` | POST | Google SERP for a keyword | 30 | Bright Data |
 | `app/api/unlocker/route.ts` | POST | Fetch one URL, or up to 5, through Web Unlocker. Every URL passes `assertPublicHttpUrl` | 30 | Bright Data |
 | `app/api/rank-signal/route.ts` | GET, POST | Rank Signal paired A/B trials for one signal, streamed as server-sent events. GET lists signals and allowed judge models. `maxDuration` 300 | 6 | OpenRouter, Bright Data |
-| `app/api/audit/route.ts` | POST | AEO page audit, fetches the page directly | 30 | Nothing |
-| `app/api/mcp/route.ts` | POST | Remote MCP server, stateless Streamable HTTP. Needs `MCP_TOKEN` as a Bearer token. Tools in `lib/server/mcp.ts`: `list_engines`, `check_visibility`, `google_serp`, `audit_page` (runs the `audit` route handler in-process). GET and DELETE answer 405. `maxDuration` 300 | 30 | Bright Data |
+| `app/api/audit/route.ts` | POST | AEO page audit, fetches the page directly. Logic in `lib/server/audit.ts` (`runAudit`) | 30 | Nothing |
+| `app/api/mcp/route.ts` | POST | Remote MCP server, stateless Streamable HTTP. Needs `MCP_TOKEN` as a Bearer token. Tools in `lib/server/mcp.ts`: `list_engines`, `check_visibility`, `google_serp`, `audit_page` (`runAudit` from `lib/server/audit.ts`). GET and DELETE answer 405. `maxDuration` 300 | 30 | Bright Data |
 | `app/api/state/route.ts` | GET, PUT, DELETE | Cloud KV sync, needs the `x-sync-secret` header | 30 | Supabase |
 
 ## Conventions
@@ -98,11 +99,11 @@ All routes are unauthenticated except `state`. Limits are requests per IP per pa
 
 1. Extend `Provider`, `ALL_PROVIDERS` and `PROVIDER_LABELS` in `components/dashboard/types.ts`.
 2. Add it to the `z.enum` in `app/api/scrape/route.ts`, and to `ProviderSchema` and `providerToDatasetEnv` in `lib/server/brightdata-scraper.ts`, with a default dataset ID.
-3. Add an entry to `PLATFORMS` in `lib/server/brightdata-platforms.ts`, and a label in `ENGINE_LABELS` in `lib/server/mcp.ts` (the MCP engine list reads `ProviderSchema`).
+3. Add an entry to `PLATFORMS` in `lib/server/brightdata-platforms.ts`, and a label in `ENGINE_LABELS` in `lib/server/visibility.ts` (the MCP server and the CLI read the engine list from `ProviderSchema`).
 4. Update `lib/demo-data.ts`, `components/dashboard/tabs/visibility-analytics-tab.tsx` and `components/dashboard/tabs/reputation-sources-tab.tsx`, which key on engine names.
 5. Add the dataset env var to `.env.example`.
 
-Check `https://docs.brightdata.com/scrapers.json` first: an engine needs a live dataset there. Grok was removed in v1.5.0 because its Bright Data scraper never completes, and Copilot in v1.7.0 because Bright Data retired its scraper (`CHANGELOG.md`). `Provider` in `components/dashboard/types.ts` still lists `copilot` so runs saved before v1.7.0 render; it is not in `ALL_PROVIDERS`. Known outages go in `ENGINE_NOTES` in `lib/server/mcp.ts`.
+Check `https://docs.brightdata.com/scrapers.json` first: an engine needs a live dataset there. Grok was removed in v1.5.0 because its Bright Data scraper never completes, and Copilot in v1.7.0 because Bright Data retired its scraper (`CHANGELOG.md`). `Provider` in `components/dashboard/types.ts` still lists `copilot` so runs saved before v1.7.0 render; it is not in `ALL_PROVIDERS`. Known outages go in `ENGINE_NOTES` in `lib/server/visibility.ts`.
 
 ### Add a tab
 
@@ -114,6 +115,7 @@ Check `https://docs.brightdata.com/scrapers.json` first: an engine needs a live 
 
 - Free and offline: `npm test`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run test:pillar -- <1-8>`.
 - MCP: `lib/server/mcp.test.ts` drives every tool through the real MCP client over an in-memory transport with fake Bright Data calls (free). For a live check, `npm run build`, start with `MCP_TOKEN` set, and connect any MCP client to `http://localhost:3000/api/mcp`.
+- CLI: `cli/src/run.test.ts` runs every command with fake deps (free). For a release check, `npm run build:cli`, then `npm pack` in `cli/`, install the tarball in an empty folder and run `npx geo-aeo-tracker audit https://example.com` (free). Publish with `npm publish` from `cli/` after bumping `cli/package.json`.
 - Paid: `npm run test:scraper` with keys, and any request to `/api/scrape`, `/api/brightdata-platforms`, `/api/bulk-sro`, `/api/serp`, `/api/unlocker`, `/api/site-context`, `/api/analyze` or `/api/sro-analyze`.
 - Never run paid calls without the user's keys and explicit consent. `bulk-sro` fans out to every vendor in one request.
 - UI changes need a look in a real browser at `npm run dev`. Use `/demo` for a no-key check.
@@ -126,6 +128,7 @@ Check `https://docs.brightdata.com/scrapers.json` first: an engine needs a live 
 - `proxy.ts` keeps its counters in process memory. Off Vercel a client can still send its own `x-real-ip` when no proxy overwrites it, so the limit is best-effort. On serverless each instance counts alone, so the limit stops bursts and nothing more.
 - `scripts/*.js` is excluded from ESLint in `eslint.config.mjs`.
 - `lib/server/brightdata-scraper.ts` waits 90 seconds and follows a `snapshot_id` handoff. Keep that timeout, since Gemini needs it. Its follow-up poll can run for about 10 minutes on a stuck snapshot, which is why `check_visibility` wraps each engine in its own deadline.
+- Google now wraps organic result links in `google.com/goto` redirects. `resultDomain` in `lib/server/serp.ts` reads the real site from `display_link`; Reddit threads show none, so their `domain` is empty. After a failed query Bright Data answers 200 with a text body asking to wait 15 seconds, so `fetchSerp` retries once after 16 seconds.
 - `app/api/bulk-sro/route.ts` streams `text/event-stream`. Keep the response shape when editing it.
 - The cloud sync secret is entered in the UI and stored per browser (`lib/client/cloud-mode.ts`). It never ships in the bundle.
 - `vercel.json` holds only a schema line. Vercel needs no extra config.

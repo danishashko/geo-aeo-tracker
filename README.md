@@ -11,8 +11,8 @@
 <h1 align="center">GEO/AEO Tracker</h1>
 
 <p align="center">
-  Open-source, self-hosted AI visibility tracker for GEO and AEO.<br/>
-  Track your brand in ChatGPT, Perplexity, Gemini and Google AI Mode.
+  Open-source, self-hosted AI visibility tracker and AEO checker.<br/>
+  Track your brand in ChatGPT, Perplexity, Gemini and Google AI Mode from a dashboard, an MCP server or the CLI.
 </p>
 
 <p align="center">
@@ -21,6 +21,7 @@
   <a href="#deploy-to-vercel"><strong>Deploy</strong></a> · 
   <a href="#-optional-cloud-persistence-with-supabase"><strong>Cloud Sync</strong></a> · 
   <a href="#mcp-server"><strong>MCP</strong></a> · 
+  <a href="#cli"><strong>CLI</strong></a> · 
   <a href="#api-routes"><strong>API</strong></a>
 </p>
 
@@ -38,7 +39,7 @@ GEO/AEO Tracker is an open-source, self-hosted alternative to paid AI visibility
 
 AI models are replacing traditional search for millions of queries. If your brand isn't visible in ChatGPT, Perplexity, or Gemini responses, you're invisible to a growing audience.
 
-Paid AI visibility plans in the table below run $165 to $295 a month, and they keep your data on their servers. [How it compares](#how-it-compares) lists current prices and plan limits.
+Paid AI visibility plans in the table below run $165 to $295 a month, and they keep your data on their servers. [AEO and GEO tools compared](#aeo-and-geo-tools-compared) lists current prices and plan limits.
 
 **GEO/AEO Tracker** is the alternative:
 
@@ -48,7 +49,7 @@ Paid AI visibility plans in the table below run $165 to $295 a month, and they k
 - 🛡️ **Local-first** by default: IndexedDB + localStorage, no external database
 - ☁️ **Optional cloud sync** via your own Supabase project (free tier) for multi-device access
 
-## How it compares
+## AEO and GEO tools compared
 
 | Tool | Plan and price | Engines on that plan | Prompt allowance | Open source / self-hosted | Where data lives |
 |------|-------------|-----------------------|------------------|---------------------------|------------------|
@@ -96,6 +97,7 @@ GEO/AEO Tracker is the better pick when you want:
 - 🧪 **Rank Signal**: paired A/B tests inside the SRO tab that measure whether one text feature (a number, a named source, a freshness clause, …) changes which passage a model picks
 - 📈 **Visibility scoring** (0–100): brand mentions, position, frequency, citations, sentiment
 - 🔌 **MCP server**: ask your AI agent to check brand visibility, pull Google results or audit a page, through `/api/mcp` on your own deploy
+- ⌨️ **CLI**: `npx geo-aeo-tracker` checks your brand's AI rank and runs the AEO audit from a terminal or a CI job
 - 🔔 **Drift alerts**: automatic notifications when your score changes significantly
 - ⏰ **Scheduled auto-runs**: configurable interval-based batch scraping
 - 🚀 **Batch runs**: every prompt × engine combo, 4 at a time to stay inside the rate limit
@@ -107,6 +109,23 @@ GEO/AEO Tracker is the better pick when you want:
 ### 🧪 Rank Signal
 
 The SRO score says how often your page is used; Rank Signal tests *which text features* get a passage picked. After an SRO run, it takes passages from your page and the top competitors (topped up from the rest of the SERP top 10 when there are fewer than 40), builds two versions of each that differ in exactly one feature, and asks a judge model which one it would rather cite. Wins are scored with a Jeffreys posterior and read only at 20, 30 and 40 trials, so a verdict (positive, negative, no clear effect, or inconclusive) comes with its 95% interval. An S00 placebo, which rewords one sentence without changing its meaning or length, shows how much the judge reacts to being edited at all. It is a pairwise preference proxy, not live grounding selection. Method after DEJAN AI's Rank Signal (dejan.ai/optimizer-sample).
+
+## AI visibility checker (GEO/AEO audit)
+
+The AEO audit checks whether AI search engines can find, read and quote a page. It needs no API key and costs nothing to run: open the **AEO Audit** tab, call `audit_page` from the [MCP server](#mcp-server), or run it from the [CLI](#cli):
+
+```bash
+npx geo-aeo-tracker audit https://acme.com
+```
+
+It runs 20 checks and scores the page from 0 to 100 on the share that pass:
+
+- **Discovery:** llms.txt, llms-full.txt, AI crawler access in robots.txt for the page's path, and an XML sitemap (including a sitemap index or one listed in robots.txt)
+- **Structure:** JSON-LD structured data, FAQ schema, Open Graph tags, meta description, canonical tag
+- **Content:** a direct answer in the opening text (BLUF), heading hierarchy, content depth, internal links
+- **Technical and rendering:** HTTPS, page size, `lang` attribute, client-side rendering, how much text the server-rendered HTML holds, a `<noscript>` fallback, JavaScript weight
+
+Each failed check says what to fix.
 
 ## Architecture
 
@@ -313,6 +332,34 @@ Good to know:
 - Results stay out of the dashboard. The dashboard keeps its data in your browser, which the server cannot read.
 - On a demo deploy (`NEXT_PUBLIC_DEMO_ONLY=true`) `/api/mcp` answers 403 like every other API route.
 
+## CLI
+
+The same checks run from your terminal with `npx`, no deploy and no dashboard. Bring your own Bright Data key; the audit needs none.
+
+```bash
+export BRIGHT_DATA_KEY=your_key
+```
+
+**Check your brand in AI answers** (ChatGPT, Perplexity, Gemini and Google AI Mode in parallel, scored like the dashboard):
+
+```bash
+npx geo-aeo-tracker check "best crm for startups" --brand Acme --competitor HubSpot,Pipedrive --website acme.com
+```
+
+**Run a GEO/AEO audit on any page** (llms.txt, AI crawler access, Schema.org, answer-first content, headings; free):
+
+```bash
+npx geo-aeo-tracker audit https://acme.com
+```
+
+**Get Google results and your rank:**
+
+```bash
+npx geo-aeo-tracker serp "best crm for startups" --target acme.com
+```
+
+`npx geo-aeo-tracker engines` lists the engines and known outages. Every command takes `--json`. `check` and `audit` take `--min-score <n>` and exit with code 3 below it, so a daily GitHub Actions job can fail when your AI visibility drops. `check` bills Bright Data once per engine and takes 1 to 5 minutes, because it waits for the slowest engine; `--engine gemini --engine google_ai` limits it. The CLI reads `.env.local` and `.env` from the current folder, so it picks up the tracker's own keys when you run it in the repo. Run `npx geo-aeo-tracker --help` for every option.
+
 ## API Routes
 
 | Route | Runtime | Purpose |
@@ -359,8 +406,20 @@ It tracks the 4 engines Bright Data runs an AI scraper for: ChatGPT, Perplexity,
 
 On 10 November 2026 Bright Data listed its Perplexity scraper as temporarily unavailable. Perplexity runs return an error until Bright Data restores it. Outages are posted in the [Bright Data release notes](https://docs.brightdata.com/release-notes).
 
+### Is there a CLI?
+Yes. `npx geo-aeo-tracker check "<prompt>" --brand <name>` scores your brand in ChatGPT, Perplexity, Gemini and Google AI Mode, and `npx geo-aeo-tracker audit <url>` runs the GEO/AEO audit for free. See [CLI](#cli).
+
 ### Does it have an MCP server?
 Yes. Set `MCP_TOKEN` and your deploy serves an MCP endpoint at `/api/mcp` with four tools: `list_engines`, `check_visibility`, `google_serp` and `audit_page`. Setup is in [MCP server](#mcp-server).
+
+### How do I track my brand's rank in ChatGPT?
+Add the questions your buyers ask to the Prompt Hub and run them, or run `npx geo-aeo-tracker check "<prompt>" --brand <name> --engine chatgpt`. Each answer gets a visibility score from 0 to 100 from mentions, position, frequency, citations and sentiment, plus the competitors ChatGPT named and the sources it cited. Leave out `--engine` to compare ChatGPT with Perplexity, Gemini and Google AI Mode.
+
+### Is there a free AI visibility checker?
+The [AEO audit](#ai-visibility-checker-geoaeo-audit) is free and needs no key: `npx geo-aeo-tracker audit <url>` checks a page for AI search readiness. Checking your brand inside AI answers calls Bright Data, which bills per call.
+
+### Is there an open-source alternative to Profound or Peec AI?
+Yes. GEO/AEO Tracker is an MIT-licensed, self-hosted AI visibility tracker. It runs on your own API keys, keeps results in your browser or your own Supabase project, and you can change the code. Prices for paid tools are in [AEO and GEO tools compared](#aeo-and-geo-tools-compared).
 
 ### Where is my data stored?
 Results are stored in your browser (IndexedDB) by default. You can sync them to your own Supabase project. Prompts are sent to Bright Data and OpenRouter to collect and analyze the AI answers.
@@ -372,7 +431,7 @@ Yes, for live tracking: set `BRIGHT_DATA_KEY`. Without it the dashboard shows a 
 Yes. The Automation tab has an in-app scheduler (hourly, every 6 hours, every 12 hours or daily) that runs while the browser tab is open, and explains how to set up Vercel Cron or GitHub Actions for unattended runs.
 
 ### Is there an open-source AI visibility tracker?
-Yes. GEO/AEO Tracker is MIT licensed and self-hosted. It tracks 4 engines, scores your visibility from 0 to 100, and shows citations and competitor battlecards. Paid plans are in [How it compares](#how-it-compares).
+Yes. GEO/AEO Tracker is MIT licensed and self-hosted. It tracks 4 engines, scores your visibility from 0 to 100, and shows citations and competitor battlecards. Paid plans are in [AEO and GEO tools compared](#aeo-and-geo-tools-compared).
 
 ## For AI agents and LLMs
 

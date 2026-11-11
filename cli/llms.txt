@@ -1,0 +1,29 @@
+# geo-aeo-tracker
+
+> CLI that measures how AI answer engines (ChatGPT, Perplexity, Gemini, Google AI Mode) mention, recommend and cite a brand, audits pages for AI search readiness (GEO/AEO), and returns Google rank. Runs with `npx -y geo-aeo-tracker`. Non-interactive; every command takes `--json`.
+
+## Discover
+
+- `npx -y geo-aeo-tracker help --json`: every command, flag, default, cost, duration, JSON output field and exit code as one JSON document. Read this before anything else.
+- `npx -y geo-aeo-tracker help <command>`: the same for one command, as text.
+
+## Commands
+
+- `engines --json`: free. Engine ids (`chatgpt`, `perplexity`, `gemini`, `google_ai`) and known outages. Check before `check`.
+- `audit <url> --json`: free, no key. 20 checks (llms.txt, AI crawler access, sitemap, JSON-LD, FAQ schema, Open Graph, answer-first content, headings, rendering) and a 0-100 score. Each failed check has `detail` saying how to fix it.
+- `check "<buyer question>" --brand <name> [--competitor a,b] [--website domain] [--engine id] [--country CC] --json`: asks each engine the prompt in parallel and returns per-engine `visibilityScore` (0-100), `sentiment`, `brandMentions`, `competitorMentions`, `websiteCited`, `sources` and the full `answer`, plus `summary.averageVisibility`. Bills Bright Data once per engine; 30 s to 5 min.
+- `serp "<keyword>" --target <domain> --json`: Google organic results and `targetRank`. Bills Bright Data once.
+
+## Rules for agents
+
+- Needs `BRIGHT_DATA_KEY` in the environment (or `.env` in the working folder) for `check` and `serp`. Never ask the user to paste it into chat.
+- Start free: `engines`, then `audit` on the user's site. Run one `check` before batching many; each costs money.
+- Use buyer-style prompts ("What is the best CRM for a small business?"), not the brand name.
+- With `--json`, stdout is exactly one JSON document, also on errors: `{"error":{"type":"usage"|"failed","message":"...","exitCode":2}}`. Progress lines go to stderr.
+- Exit codes: 0 ok, 1 failed (no engine answered, page unreachable), 2 bad usage or missing key (nothing billed), 3 below `--min-score`.
+- An engine with `status: "error"` and a `note` is a known outage at Bright Data; report it and leave that engine out, do not retry in a loop.
+
+## Docs
+
+- [README](https://github.com/danishashko/geo-aeo-tracker/tree/main/cli#readme)
+- [Dashboard and MCP server](https://github.com/danishashko/geo-aeo-tracker)

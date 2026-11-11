@@ -368,6 +368,19 @@ npx geo-aeo-tracker serp "best crm for startups" --target acme.com
 
 `npx geo-aeo-tracker engines` lists the engines and known outages. Every command takes `--json`. `check` and `audit` take `--min-score <n>` and exit with code 3 below it, so a daily GitHub Actions job can fail when your AI visibility drops. `check` bills Bright Data once per engine and takes 1 to 5 minutes, because it waits for the slowest engine; `--engine gemini --engine google_ai` limits it. The CLI reads `.env.local` and `.env` from the current folder, so it picks up the tracker's own keys when you run it in the repo. Run `npx geo-aeo-tracker --help` for every option.
 
+**Hand it to your AI agent.** Paste this into Claude Code, Codex or Cursor, with your brand filled in:
+
+```text
+Use the geo-aeo-tracker CLI to check how AI search sees my brand. First run
+`npx -y geo-aeo-tracker skill --install`, then `npx -y geo-aeo-tracker help --json`
+to learn the commands. Audit my site for free, then run one `check` with --json.
+Brand: <name>. Site: <domain>. Competitors: <a, b>. A buyer question: "<question>".
+BRIGHT_DATA_KEY is already in my environment. Report the average visibility, the
+engines that miss us, the competitors they name instead, and the top 3 fixes.
+```
+
+`help --json` gives agents every command, flag, cost and output field; with `--json` even errors come back as JSON on stdout; and `skill --install` adds an Agent Skill to `~/.claude/skills/` so Claude Code uses the CLI on its own. Details in the [CLI README](cli/README.md#for-ai-agents).
+
 ## API Routes
 
 | Route | Runtime | Purpose |

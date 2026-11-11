@@ -63,6 +63,27 @@ Every command takes `--json`. `check` and `audit` take `--min-score` and exit wi
 | 2 | Bad usage or missing `BRIGHT_DATA_KEY` |
 | 3 | Below `--min-score` |
 
+## For AI agents
+
+**One-prompt setup.** Paste this into Claude Code, Codex, Cursor or any agent that can run shell commands, with your brand filled in:
+
+```text
+Use the geo-aeo-tracker CLI to check how AI search sees my brand. First run
+`npx -y geo-aeo-tracker skill --install`, then `npx -y geo-aeo-tracker help --json`
+to learn the commands. Audit my site for free, then run one `check` with --json.
+Brand: <name>. Site: <domain>. Competitors: <a, b>. A buyer question: "<question>".
+BRIGHT_DATA_KEY is already in my environment. Report the average visibility, the
+engines that miss us, the competitors they name instead, and the top 3 fixes.
+```
+
+What makes it agent-friendly:
+
+- `help --json` describes every command: when to use it, flags, defaults, cost, duration, the JSON output fields and the exit codes.
+- With `--json`, stdout is always one JSON document, errors included: `{"error":{"type":"usage","message":"...","exitCode":2}}`. Progress goes to stderr.
+- It never prompts. Exit code 2 means bad input or a missing key, so nothing was billed.
+- `skill --install` writes an [Agent Skill](https://github.com/danishashko/geo-aeo-tracker/blob/main/cli/skill/SKILL.md) to `~/.claude/skills/geo-aeo-tracker/` so Claude Code picks the CLI up whenever you ask about AI visibility. `--dir <folder>` writes it anywhere else.
+- The package ships [`llms.txt`](https://github.com/danishashko/geo-aeo-tracker/blob/main/cli/llms.txt) with the rules agents should follow.
+
 ## Setup
 
 - Node.js 20.12 or newer.

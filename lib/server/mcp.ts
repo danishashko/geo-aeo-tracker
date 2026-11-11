@@ -18,7 +18,7 @@ import {
   type ScrapeFn,
 } from "./visibility";
 
-export const MCP_SERVER_VERSION = "1.8.0";
+export const MCP_SERVER_VERSION = "1.9.0";
 export { ENGINE_TIMEOUT_MS };
 
 export interface McpDeps {

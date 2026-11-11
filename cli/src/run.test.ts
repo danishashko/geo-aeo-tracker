@@ -70,6 +70,9 @@ function harness(over: Partial<CliDeps> = {}) {
     },
     datasetId: (p) => `ds_${p}`,
     env: { BRIGHT_DATA_KEY: "k" },
+    skillText: () => "---\nname: geo-aeo-tracker\n---\nbody",
+    installSkill: (dir) =>
+      `${dir ?? "/home/u/.claude/skills/geo-aeo-tracker"}/SKILL.md`,
     out: (t) => out.push(t),
     err: (t) => err.push(t),
     ...over,
@@ -288,4 +291,115 @@ test("cli: `help` prints help; engines rejects extra arguments", async () => {
   assert.equal(await run(["help"], h.deps), EXIT.ok);
   assert.match(h.text(), /Exit codes/);
   assert.equal(await run(["engines", "extra"], harness().deps), EXIT.usage);
+});
+
+test("cli: help --json describes every command for agents", async () => {
+  const h = harness({ env: {} });
+  assert.equal(await run(["help", "--json"], h.deps), EXIT.ok);
+  const d = JSON.parse(h.text());
+  assert.deepEqual(
+    d.commands.map((c: { name: string }) => c.name),
+    ["check", "audit", "serp", "skill", "engines"],
+  );
+  const check = d.commands[0];
+  assert.equal(check.needsBrightDataKey, true);
+  assert.ok(
+    check.useWhen && check.cost && check.duration && check.examples.length,
+  );
+  assert.deepEqual(
+    check.options.find((o: { flag: string }) => o.flag === "--engine").enum,
+    ["chatgpt", "perplexity", "gemini", "google_ai"],
+  );
+  assert.deepEqual(Object.keys(d.exitCodes), ["0", "1", "2", "3"]);
+  assert.equal(d.version, "0.0.0-dev");
+  // --help --json and <command> --help --json give the same document.
+  const h2 = harness();
+  await run(["check", "--help", "--json"], h2.deps);
+  assert.deepEqual(JSON.parse(h2.text()), d);
+});
+
+test("cli: help <command> and <command> --help print that command", async () => {
+  for (const args of [
+    ["help", "audit"],
+    ["audit", "--help"],
+  ]) {
+    const h = harness();
+    assert.equal(await run(args, h.deps), EXIT.ok);
+    assert.match(h.text(), /^geo-aeo-tracker audit: /);
+    assert.match(h.text(), /Use when: /);
+    assert.match(h.text(), /Cost: Free/);
+  }
+  assert.equal(await run(["help", "nope"], harness().deps), EXIT.usage);
+});
+
+test("cli: with --json, errors are one JSON document on stdout", async () => {
+  const usage = harness({ env: {} });
+  assert.equal(
+    await run(["check", "best api", "--brand", "Acme", "--json"], usage.deps),
+    EXIT.usage,
+  );
+  const e = JSON.parse(usage.text()).error;
+  assert.equal(e.type, "usage");
+  assert.equal(e.exitCode, 2);
+  assert.match(e.message, /BRIGHT_DATA_KEY/);
+
+  const failed = harness({
+    audit: async () => {
+      throw new Error("Unable to fetch page (404)");
+    },
+  });
+  assert.equal(
+    await run(["audit", "example.com/x", "--json"], failed.deps),
+    EXIT.failed,
+  );
+  assert.deepEqual(JSON.parse(failed.text()).error, {
+    type: "failed",
+    message: "Unable to fetch page (404)",
+    exitCode: 1,
+  });
+  // Without --json nothing goes to stdout on error.
+  const plain = harness({ env: {} });
+  await run(["serp", "x"], plain.deps);
+  assert.equal(plain.out.length, 0);
+});
+
+test("cli: every flag in the spec is parsed", async () => {
+  const { COMMANDS } = await import("./spec");
+  const known = [
+    "brand",
+    "alias",
+    "competitor",
+    "website",
+    "engine",
+    "country",
+    "timeout",
+    "full",
+    "min-score",
+    "target",
+    "limit",
+    "json",
+    "install",
+    "dir",
+  ];
+  for (const c of COMMANDS)
+    for (const o of c.options) assert.ok(known.includes(o.name), o.name);
+});
+
+test("cli: skill prints SKILL.md, --install and --dir write it", async () => {
+  const h = harness({ env: {} });
+  assert.equal(await run(["skill"], h.deps), EXIT.ok);
+  assert.match(h.text(), /^---\nname: geo-aeo-tracker/);
+  const i = harness({ env: {} });
+  assert.equal(await run(["skill", "--install", "--json"], i.deps), EXIT.ok);
+  assert.equal(
+    JSON.parse(i.text()).installed,
+    "/home/u/.claude/skills/geo-aeo-tracker/SKILL.md",
+  );
+  const d = harness({ env: {} });
+  await run(["skill", "--dir", "/x/skills/geo"], d.deps);
+  assert.equal(d.text(), "Installed /x/skills/geo/SKILL.md");
+  assert.equal(
+    await run(["skill", "--brand", "x"], harness().deps),
+    EXIT.usage,
+  );
 });

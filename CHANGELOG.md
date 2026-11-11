@@ -4,6 +4,20 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
+## [1.9.0] - 2026-11-11
+
+### 🤖 CLI built for AI agents
+
+- **`help --json`** describes the whole CLI in one JSON document: every command with when to use it, flags, defaults, cost, duration, the JSON output fields, exit codes and environment. `help <command>` and `<command> --help` give the same for one command as text.
+- **JSON errors.** With `--json`, stdout is always one JSON document, errors included: `{"error":{"type","message","exitCode"}}`. Progress stays on stderr.
+- **`skill` command and Agent Skill.** `npx -y geo-aeo-tracker skill --install` writes `SKILL.md` to `~/.claude/skills/geo-aeo-tracker/`, so Claude Code reaches for the CLI when you ask about AI visibility. `--dir` writes it for other agents.
+- **`llms.txt` in the npm package** with the rules agents should follow (start free, one paid prompt first, never ask for the key in chat, how to read outages).
+- **One-prompt setup** in the README and on the npm page: paste one prompt into Claude Code, Codex or Cursor and the agent installs the skill, learns the commands, audits the site and runs a check.
+- The help text, `help --json`, flag parsing and the per-command flag check now come from one spec (`cli/src/spec.ts`), so they cannot drift.
+- The demo site's `/llms.txt` lists the CLI, and the `brightdata-platforms` route reads "4-platform".
+
+---
+
 ## [1.8.0] - 2026-11-11
 
 ### ⌨️ New: CLI on npm

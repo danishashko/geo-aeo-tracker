@@ -115,7 +115,7 @@ Check `https://docs.brightdata.com/scrapers.json` first: an engine needs a live 
 
 - Free and offline: `npm test`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run test:pillar -- <1-8>`.
 - MCP: `lib/server/mcp.test.ts` drives every tool through the real MCP client over an in-memory transport with fake Bright Data calls (free). For a live check, `npm run build`, start with `MCP_TOKEN` set, and connect any MCP client to `http://localhost:3000/api/mcp`.
-- CLI: `cli/src/run.test.ts` runs every command with fake deps (free). For a release check, `npm run build:cli`, then `npm pack` in `cli/`, install the tarball in an empty folder and run `npx geo-aeo-tracker audit https://example.com` (free). Publish with `npm publish` from `cli/` after bumping `cli/package.json`.
+- CLI: commands, flags, help text and `help --json` all come from `cli/src/spec.ts`; add a flag there and to `ParsedValues` in `cli/src/run.ts`. The package also ships `cli/llms.txt` and `cli/skill/SKILL.md`; keep them in step with the spec. `cli/src/run.test.ts` runs every command with fake deps (free). For a release check, `npm run build:cli`, then `npm pack` in `cli/`, install the tarball in an empty folder and run `npx geo-aeo-tracker audit https://example.com` (free). Publish with `npm publish` from `cli/` after bumping `cli/package.json`.
 - Paid: `npm run test:scraper` with keys, and any request to `/api/scrape`, `/api/brightdata-platforms`, `/api/bulk-sro`, `/api/serp`, `/api/unlocker`, `/api/site-context`, `/api/analyze` or `/api/sro-analyze`.
 - Never run paid calls without the user's keys and explicit consent. `bulk-sro` fans out to every vendor in one request.
 - UI changes need a look in a real browser at `npm run dev`. Use `/demo` for a no-key check.

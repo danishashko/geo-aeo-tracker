@@ -13,6 +13,7 @@ import {
   type VisibilityReport,
 } from "../../lib/server/visibility";
 import type { AuditReport } from "../../lib/server/audit";
+import { COMMANDS, commandHelp, describe, overviewHelp } from "./spec";
 
 export interface CliDeps {
   scrape: ScrapeFn;
@@ -20,6 +21,10 @@ export interface CliDeps {
   audit: (url: string) => Promise<AuditReport>;
   datasetId: (provider: AiScraperProvider) => string;
   env: Record<string, string | undefined>;
+  /** SKILL.md text shipped in the package. */
+  skillText: () => string;
+  /** Writes SKILL.md into the folder (default ~/.claude/skills/geo-aeo-tracker) and returns its path. */
+  installSkill: (dir?: string) => string;
   out: (text: string) => void;
   err: (text: string) => void;
 }
@@ -29,61 +34,47 @@ export const EXIT = { ok: 0, failed: 1, usage: 2, belowMin: 3 } as const;
 
 class UsageError extends Error {}
 
-// Flags each command accepts (parseArgs keys). --help and --version are handled first.
-const COMMAND_OPTIONS: Record<string, string[]> = {
-  check: [
-    "brand",
-    "alias",
-    "competitor",
-    "website",
-    "engine",
-    "country",
-    "timeout",
-    "full",
-    "min-score",
-    "json",
-  ],
-  audit: ["min-score", "json"],
-  serp: ["target", "limit", "json"],
-  engines: ["json"],
+// Flags each command accepts, from the spec. --help and --version are handled first.
+const COMMAND_OPTIONS: Record<string, string[]> = Object.fromEntries(
+  COMMANDS.map((c) => [c.name, c.options.map((o) => o.name)]),
+);
+
+/** The flags in the spec, typed. `spec.test` keeps this in step with COMMANDS. */
+export interface ParsedValues {
+  brand?: string;
+  alias?: string[];
+  competitor?: string[];
+  website?: string[];
+  engine?: string[];
+  country?: string;
+  timeout?: string;
+  full?: boolean;
+  "min-score"?: string;
+  target?: string;
+  limit?: string;
+  json?: boolean;
+  install?: boolean;
+  dir?: string;
+  help?: boolean;
+  version?: boolean;
+}
+
+type ParseOptions = Record<
+  string,
+  { type: "string" | "boolean"; multiple?: boolean; short?: string }
+>;
+const PARSE_OPTIONS: ParseOptions = {
+  help: { type: "boolean", short: "h" },
+  version: { type: "boolean", short: "v" },
 };
-
-const HELP = `geo-aeo-tracker: AI visibility tracker and AEO checker in your terminal
-
-Usage
-  geo-aeo-tracker check "<prompt>" --brand <name> [options]
-  geo-aeo-tracker audit <url> [--json] [--min-score <n>]
-  geo-aeo-tracker serp "<keyword>" [--target <url>] [--limit <n>] [--json]
-  geo-aeo-tracker engines [--json]
-
-check   Ask ChatGPT, Perplexity, Gemini and Google AI Mode one prompt and score
-        your brand in each answer. Bills Bright Data once per engine.
-          --brand <name>        Brand to look for (required)
-          --alias <name>        Another name for the brand (repeatable)
-          --competitor <name>   Competitor to count (repeatable)
-          --website <domain>    Your domain; a cited source on it adds to the score (repeatable)
-          --engine <id>         chatgpt, perplexity, gemini or google_ai (repeatable, default all)
-          --country <cc>        2-letter country to ask from (default US)
-          --timeout <seconds>   Per-engine deadline (default 300)
-          --full                Print each full answer
-          --min-score <n>       Exit 3 if the average visibility is below n (for CI)
-audit   AEO page audit: llms.txt, AI crawler access, Schema.org, answer-first
-        content, headings and more. Free, no API key.
-          --min-score <n>       Exit 3 if the audit score is below n
-serp    Google organic results and your rank. Bills Bright Data once.
-engines List the engines, dataset IDs and known outages. Free.
-
-Global
-  --json       Print JSON instead of text
-  -h, --help   Show this help
-  -v, --version
-
-Environment
-  BRIGHT_DATA_KEY         Required for check and serp
-  BRIGHT_DATA_SERP_ZONE   SERP zone name (default serp_api1)
-  .env.local and .env in the current folder are read if present.
-
-Exit codes: 0 ok, 1 failed, 2 bad usage, 3 below --min-score.`;
+for (const c of COMMANDS) {
+  for (const o of c.options) {
+    PARSE_OPTIONS[o.name] = {
+      type: o.type,
+      ...(o.multiple ? { multiple: true } : {}),
+    };
+  }
+}
 
 function toInt(
   name: string,
@@ -153,15 +144,28 @@ function printVisibility(
 }
 
 export async function run(argv: string[], deps: CliDeps): Promise<number> {
+  const json = argv.includes("--json");
+  const fail = (
+    type: "usage" | "failed",
+    message: string,
+    exitCode: number,
+  ) => {
+    if (json)
+      deps.out(JSON.stringify({ error: { type, message, exitCode } }, null, 2));
+    deps.err(
+      type === "usage"
+        ? `Error: ${message}\nRun geo-aeo-tracker help for usage.`
+        : `Error: ${message}`,
+    );
+    return exitCode;
+  };
   try {
     return await dispatch(argv, deps);
   } catch (e) {
-    if (e instanceof UsageError) {
-      deps.err(`Error: ${e.message}\nRun geo-aeo-tracker --help for usage.`);
-      return EXIT.usage;
-    }
-    deps.err(`Error: ${e instanceof Error ? e.message : String(e)}`);
-    return EXIT.failed;
+    const message = e instanceof Error ? e.message : String(e);
+    return e instanceof UsageError
+      ? fail("usage", message, EXIT.usage)
+      : fail("failed", message, EXIT.failed);
   }
 }
 
@@ -171,27 +175,13 @@ async function dispatch(argv: string[], deps: CliDeps): Promise<number> {
     parsed = parseArgs({
       args: argv,
       allowPositionals: true,
-      options: {
-        brand: { type: "string" },
-        alias: { type: "string", multiple: true },
-        competitor: { type: "string", multiple: true },
-        website: { type: "string", multiple: true },
-        engine: { type: "string", multiple: true },
-        country: { type: "string" },
-        timeout: { type: "string" },
-        full: { type: "boolean" },
-        "min-score": { type: "string" },
-        target: { type: "string" },
-        limit: { type: "string" },
-        json: { type: "boolean" },
-        help: { type: "boolean", short: "h" },
-        version: { type: "boolean", short: "v" },
-      },
+      options: PARSE_OPTIONS,
     });
   } catch (e) {
     throw new UsageError(e instanceof Error ? e.message : String(e));
   }
-  const { values: o, positionals } = parsed;
+  const { positionals } = parsed;
+  const o = parsed.values as ParsedValues;
   const [command, ...rest] = positionals;
 
   if (o.version) {
@@ -199,7 +189,19 @@ async function dispatch(argv: string[], deps: CliDeps): Promise<number> {
     return EXIT.ok;
   }
   if (o.help || !command || command === "help") {
-    deps.out(HELP);
+    // `help --json` (or any --help with --json) describes the whole CLI.
+    if (o.json) {
+      deps.out(JSON.stringify(describe(VERSION), null, 2));
+      return EXIT.ok;
+    }
+    const topic = command === "help" ? rest[0] : command;
+    if (topic) {
+      const text = commandHelp(topic);
+      if (!text) throw new UsageError(`Unknown command "${topic}"`);
+      deps.out(text);
+      return EXIT.ok;
+    }
+    deps.out(overviewHelp());
     return command || o.help ? EXIT.ok : EXIT.usage;
   }
   // Reject flags the command does not use, so a typo never runs silently.
@@ -370,6 +372,22 @@ async function dispatch(argv: string[], deps: CliDeps): Promise<number> {
           `\n${o.target}: ${result.targetRank ? `rank ${result.targetRank}` : "not in the results"}`,
         );
       }
+      return EXIT.ok;
+    }
+
+    case "skill": {
+      if (rest.length) throw new UsageError("skill takes no arguments");
+      if (o.install || o.dir !== undefined) {
+        const path = deps.installSkill(o.dir);
+        deps.out(
+          o.json
+            ? JSON.stringify({ installed: path }, null, 2)
+            : `Installed ${path}`,
+        );
+        return EXIT.ok;
+      }
+      const skill = deps.skillText();
+      deps.out(o.json ? JSON.stringify({ skill }, null, 2) : skill);
       return EXIT.ok;
     }
 

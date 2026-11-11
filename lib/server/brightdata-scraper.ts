@@ -4,12 +4,15 @@ import { fetchWithTimeout } from "./http";
 const ProviderSchema = z.enum([
   "chatgpt",
   "perplexity",
-  "copilot",
   "gemini",
   "google_ai",
 ]);
 
 type Provider = z.infer<typeof ProviderSchema>;
+
+/** Engines with a live Bright Data AI scraper, in display order. */
+export const AI_SCRAPER_PROVIDERS = ProviderSchema.options;
+export type AiScraperProvider = Provider;
 
 const OUTPUT_CACHE_TTL_MS = 1000 * 60 * 20;
 
@@ -21,7 +24,6 @@ const inMemoryCache = new Map<
 const providerToDatasetEnv: Record<Provider, string> = {
   chatgpt: "BRIGHT_DATA_DATASET_CHATGPT",
   perplexity: "BRIGHT_DATA_DATASET_PERPLEXITY",
-  copilot: "BRIGHT_DATA_DATASET_COPILOT",
   gemini: "BRIGHT_DATA_DATASET_GEMINI",
   google_ai: "BRIGHT_DATA_DATASET_GOOGLE_AI",
 };
@@ -29,11 +31,12 @@ const providerToDatasetEnv: Record<Provider, string> = {
 // Bright Data's public AI-scraper dataset IDs. These are the same for every
 // account, so nobody needs to set a dataset env var just to get started — the
 // env vars stay as an override for anyone on a custom or private dataset.
-// Every ID below was triggered live and returned a real answer on 2026-08-12.
+// Every ID below is listed in Bright Data's scraper catalog
+// (docs.brightdata.com/scrapers.json) as of 2026-11-10. The Copilot scraper
+// (gd_m7di5jy6s9geokz8w) is no longer in the catalog and was removed.
 const providerDefaultDataset: Record<Provider, string> = {
   chatgpt: "gd_m7aof0k82r803d5bjm",
   perplexity: "gd_m7dhdot1vw9a7gc1n",
-  copilot: "gd_m7di5jy6s9geokz8w",
   gemini: "gd_mbz66arm2mf9cu856y",
   google_ai: "gd_mcswdt6z2elth3zqr2",
 };
@@ -41,7 +44,6 @@ const providerDefaultDataset: Record<Provider, string> = {
 const providerBaseUrl: Record<Provider, string> = {
   chatgpt: "https://chatgpt.com/",
   perplexity: "https://www.perplexity.ai/",
-  copilot: "https://copilot.microsoft.com/",
   gemini: "https://gemini.google.com/",
   google_ai: "https://www.google.com/",
 };
@@ -68,7 +70,7 @@ function getApiKey() {
   return process.env.BRIGHT_DATA_KEY;
 }
 
-function getDatasetId(provider: Provider) {
+export function getDatasetId(provider: Provider) {
   return (
     process.env[providerToDatasetEnv[provider]] ||
     providerDefaultDataset[provider]

@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const description =
-  "Open-source, self-hosted dashboard that tracks how ChatGPT, Perplexity, Gemini, Copilot and Google AI Mode mention your brand. Bring your own API keys and keep your data in your browser.";
+  "Open-source, self-hosted dashboard that tracks how ChatGPT, Perplexity, Gemini and Google AI Mode mention your brand. Bring your own API keys and keep your data in your browser.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),

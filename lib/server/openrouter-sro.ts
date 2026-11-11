@@ -30,7 +30,7 @@ Key SRO concepts:
    - Direct answer patterns: Content structured to directly answer common questions
    - Structured markup: Proper headings, lists, tables, and schema that help AI parse content
 
-4. **Cross-platform presence**: Being cited across multiple AI platforms (Google AI Mode, Gemini, ChatGPT, Perplexity, Copilot) signals authority. Pages cited by 4+ platforms are considered strong sources.
+4. **Cross-platform presence**: Being cited across multiple AI platforms (Google AI Mode, Gemini, ChatGPT, Perplexity) signals authority. Pages cited by 3+ platforms are considered strong sources.
 
 5. **SERP-AI correlation**: There is a strong correlation between organic search ranking and AI citation likelihood. Pages ranking in top 5 organic positions are significantly more likely to be used as grounding sources, but this is not absolute — authoritative niche content can outperform higher-ranked pages.
 

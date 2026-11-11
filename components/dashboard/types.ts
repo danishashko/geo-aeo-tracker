@@ -1,6 +1,7 @@
 export type Provider =
   | "chatgpt"
   | "perplexity"
+  /** Legacy: Bright Data retired the Copilot scraper. Kept so saved runs still render. */
   | "copilot"
   | "gemini"
   | "google_ai";
@@ -81,7 +82,6 @@ export type Workspace = {
 export const ALL_PROVIDERS: Provider[] = [
   "chatgpt",
   "perplexity",
-  "copilot",
   "gemini",
   "google_ai",
 ];

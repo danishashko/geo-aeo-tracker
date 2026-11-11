@@ -5,7 +5,7 @@ import { runAiScraper } from "@/lib/server/brightdata-scraper";
 export const maxDuration = 300;
 
 const InputSchema = z.object({
-  provider: z.enum(["chatgpt", "perplexity", "copilot", "gemini", "google_ai"]),
+  provider: z.enum(["chatgpt", "perplexity", "gemini", "google_ai"]),
   prompt: z.string().min(3).max(2000),
   requireSources: z.boolean().optional(),
   country: z

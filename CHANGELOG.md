@@ -4,6 +4,29 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
+## [1.7.0] - 2026-11-10
+
+### 🔌 New: MCP server
+
+- **Your deploy is now a remote MCP server** at `/api/mcp` (Streamable HTTP, stateless, so it runs the same on one Node process or on Vercel). Four tools: `list_engines`, `check_visibility` (one prompt to every AI engine, scored like the dashboard: visibility 0 to 100, sentiment, brand and competitor mentions, cited sources, whether your site is cited), `google_serp` (organic results and your rank) and `audit_page` (the dashboard's AEO audit).
+- **Off until you set `MCP_TOKEN`.** Clients send it as `Authorization: Bearer <token>`; without the env var the route answers 503, with a wrong token 401. Demo deploys answer 403 like every API route. Rate limit 30 per minute per IP.
+- **One slow engine no longer holds up the rest.** Each engine gets 240 seconds (`MCP_ENGINE_TIMEOUT_MS`), so a stuck Bright Data snapshot comes back as that engine's error while the others return inside the route's 300-second limit. Clients that send a progress token get an update as each engine finishes.
+- `google_serp` retries once when Bright Data answers with a body that is not parsed JSON.
+
+### 🤖 Engines: matched to what Bright Data runs today
+
+- **Copilot removed.** Bright Data's scraper catalog no longer lists a Copilot scraper (dataset `gd_m7di5jy6s9geokz8w` is gone). The tracker now runs 4 engines: ChatGPT, Perplexity, Gemini and Google AI Mode. Runs saved with Copilot still show in history.
+- **Perplexity outage noted.** Bright Data's release notes list the Perplexity scraper as temporarily unavailable since 10 November 2026. It stays in the app and the README says so.
+- Grok stays out: Bright Data has listed its Grok scraper as unavailable since 14 June 2026.
+- `BRIGHT_DATA_DATASET_COPILOT` is gone from `.env.example`.
+
+### 🔧 Other
+
+- **AEO audit: the BLUF check no longer passes almost every page.** It passed at 50%, and any page with more than 100 characters of opening text scored 50%, so it passed even when its own detail said there was no direct answer. It now passes only when the opening text uses a direct-answer phrase, and shows that phrase as its value. Audit scores for pages without one drop by one check.
+- `zod` and transitive dependencies updated by `npm audit fix`; `npm audit --omit=dev` reports 0 vulnerabilities.
+
+---
+
 ## [1.6.0] — 2026-10-19
 
 ### 🔒 Security: public deploys can no longer run up your API bill

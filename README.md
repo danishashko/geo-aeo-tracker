@@ -12,7 +12,7 @@
 
 <p align="center">
   Open-source, self-hosted AI visibility tracker for GEO and AEO.<br/>
-  Track your brand in ChatGPT, Perplexity, Gemini, Microsoft Copilot and Google AI Mode.
+  Track your brand in ChatGPT, Perplexity, Gemini and Google AI Mode.
 </p>
 
 <p align="center">
@@ -20,6 +20,7 @@
   <a href="#quick-start"><strong>Quick Start</strong></a> · 
   <a href="#deploy-to-vercel"><strong>Deploy</strong></a> · 
   <a href="#-optional-cloud-persistence-with-supabase"><strong>Cloud Sync</strong></a> · 
+  <a href="#mcp-server"><strong>MCP</strong></a> · 
   <a href="#api-routes"><strong>API</strong></a>
 </p>
 
@@ -28,7 +29,7 @@ GEO/AEO Tracker is an open-source, self-hosted alternative to paid AI visibility
 ---
 
 > 🌐 **Built with [Bright Data](https://brightdata.com/?utm_source=geo-tracker-os)** — the world's leading web data platform.
-> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 5 AI engines.
+> GEO/AEO Tracker uses Bright Data's AI Scraper API to reliably collect structured responses from 4 AI engines.
 > [Get your API key →](https://brightdata.com/?utm_source=geo-tracker-os)
 
 ---
@@ -42,7 +43,7 @@ Paid AI visibility plans in the table below run $165 to $295 a month, and they k
 **GEO/AEO Tracker** is the alternative:
 
 - 🔑 **BYOK** (Bring Your Own Keys): results are stored in your browser by default
-- 🤖 **5 AI engines** simultaneously: ChatGPT, Perplexity, Gemini, Copilot and Google AI Mode
+- 🤖 **4 AI engines** simultaneously: ChatGPT, Perplexity, Gemini and Google AI Mode
 - 💸 **Free software, pay-per-call data**: the code is MIT licensed, and Bright Data, OpenRouter and Gemini bill per call
 - 🛡️ **Local-first** by default: IndexedDB + localStorage, no external database
 - ☁️ **Optional cloud sync** via your own Supabase project (free tier) for multi-device access
@@ -51,7 +52,7 @@ Paid AI visibility plans in the table below run $165 to $295 a month, and they k
 
 | Tool | Plan and price | Engines on that plan | Prompt allowance | Open source / self-hosted | Where data lives |
 |------|-------------|-----------------------|------------------|---------------------------|------------------|
-| **GEO/AEO Tracker** | Free (MIT), you pay API providers per call | ChatGPT, Perplexity, Gemini, Copilot, Google AI Mode | No plan cap, limited by your API spend | Yes, MIT | Your browser (optional own Supabase) |
+| **GEO/AEO Tracker** | Free (MIT), you pay API providers per call | ChatGPT, Perplexity, Gemini, Google AI Mode | No plan cap, limited by your API spend | Yes, MIT | Your browser (optional own Supabase) |
 | [Semrush SEO + AI Search Starter](https://www.semrush.com/pricing/seo-ai-search/) (includes AI Visibility) | $199/month monthly, $165.17/month billed annually | Google Search, ChatGPT, Perplexity, Gemini and more | 50 prompts tracked daily | No | Vendor cloud |
 | [AthenaHQ Starter](https://www.athenahq.ai/pricing) | $295/month | 11 models including ChatGPT, Perplexity, AI Overviews, AI Mode, Gemini, Claude, Copilot, Grok, DeepSeek, Meta AI, Mistral | 3,600 credits a month (1 credit = 1 AI response) | No | Vendor cloud |
 
@@ -89,11 +90,12 @@ GEO/AEO Tracker is the better pick when you want:
 
 ### 🚀 Core Capabilities
 
-- 🤖 **Multi-model tracking** across ChatGPT, Perplexity, Gemini, Copilot, and Google AI Mode
+- 🤖 **Multi-model tracking** across ChatGPT, Perplexity, Gemini and Google AI Mode
 - 🌍 **Geo-scoped tracking**: run visibility checks by country and compare markets, with a "visibility by country" breakdown
 - � **SRO Analysis**: multi-stage pipeline scoring how well your page is optimized for AI search results
 - 🧪 **Rank Signal**: paired A/B tests inside the SRO tab that measure whether one text feature (a number, a named source, a freshness clause, …) changes which passage a model picks
 - 📈 **Visibility scoring** (0–100): brand mentions, position, frequency, citations, sentiment
+- 🔌 **MCP server**: ask your AI agent to check brand visibility, pull Google results or audit a page, through `/api/mcp` on your own deploy
 - 🔔 **Drift alerts**: automatic notifications when your score changes significantly
 - ⏰ **Scheduled auto-runs**: configurable interval-based batch scraping
 - 🚀 **Batch runs**: every prompt × engine combo, 4 at a time to stay inside the rate limit
@@ -195,6 +197,7 @@ cp .env.example .env
 - **`GEMINI_API_KEY`** — **separate from OpenRouter.** It powers only the Gemini *grounding* stage of the `bulk-sro` API, which uses Google Search grounding to see which pages Gemini actually cites in real time. OpenRouter can't do that, which is why it is its own key. Missing key skips that one stage; the rest of the SRO pipeline runs.
 - **`BRIGHT_DATA_DATASET_*`** — **you don't need these.** The app ships with Bright Data's public AI-Scraper dataset ID for every engine. Set one only to point an engine at a custom or private dataset from the [Scrapers Library](https://brightdata.com/cp/scrapers).
 - **`BRIGHT_DATA_SERP_ZONE`** / **`BRIGHT_DATA_UNLOCKER_ZONE`** — zone **names** for the SRO pipeline. They default to `serp_api1` and `web_unlocker1`, the names Bright Data's own docs use, so most accounts work untouched. Set them if you named your zones differently.
+- **`MCP_TOKEN`** turns on the [MCP server](#mcp-server) at `/api/mcp`. Clients send it as `Authorization: Bearer <token>`. Unset, the endpoint answers 503. **`MCP_ENGINE_TIMEOUT_MS`** (default `240000`) is the per-engine deadline for `check_visibility`.
 - **`RANK_SIGNAL_JUDGE_MODEL`** / **`RANK_SIGNAL_REWRITE_MODEL`** — Rank Signal's judge (default `google/gemini-3.6-flash`) and pair builder (default `OPENROUTER_MODEL`, then `google/gemini-3.5-flash`). Both must be in **`RANK_SIGNAL_ALLOWED_MODELS`** (comma list, defaults to those two) and in the route's price table. **`RANK_SIGNAL_MAX_USD_PER_HOUR`** (default `10`) caps server-side spend per instance; it is in-memory, so a stranger can use it up and lock you out until the hour resets, and the per-IP limit reads `x-vercel-forwarded-for`, then `x-real-ip`, then the last `x-forwarded-for` hop, so it is best-effort off Vercel. Put auth and a shared store (Upstash / Vercel KV) in front for hard limits.
 
 Supabase cloud-sync and demo-mode variables are documented in `.env.example`.
@@ -276,6 +279,40 @@ By default, **all your data stays in your browser** (IndexedDB). That's great fo
 - All app state keyed by workspace (`sovereign-aeo-tracker-*`) — runs, prompts, settings, SRO results.
 - NOT synced (kept local on purpose): theme preference, workspace list, active workspace — these are per-device UI choices.
 
+## MCP server
+
+Your deploy doubles as a remote MCP server at `/api/mcp` (Streamable HTTP, stateless). Agents get four tools that run on your own keys:
+
+| Tool | What it returns | Bills |
+|------|-----------------|-------|
+| `list_engines` | The AI engines you can query, their Bright Data dataset IDs and known outages | Nothing |
+| `check_visibility` | One prompt sent to ChatGPT, Perplexity, Gemini and Google AI Mode in parallel. Per engine: visibility score (0 to 100, same scoring as the dashboard), sentiment, brand and competitor mentions, cited sources and whether your site is cited | Bright Data, once per engine |
+| `google_serp` | Google organic results for a keyword and your domain's rank | Bright Data, once |
+| `audit_page` | The AEO audit from the dashboard: llms.txt, AI crawler access, Schema.org, BLUF, headings and more, scored 0 to 100 | Nothing |
+
+**1. Turn it on.** Set a long random `MCP_TOKEN` in `.env` (or in Vercel environment variables) and restart. Without it `/api/mcp` answers 503, because the tools spend your Bright Data balance.
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**2. Connect your client.** Claude Code:
+
+```bash
+claude mcp add --transport http geo-aeo-tracker http://localhost:3000/api/mcp --header "Authorization: Bearer YOUR_MCP_TOKEN"
+```
+
+Any client that supports Streamable HTTP with custom headers works the same way: use the URL `https://your-deploy/api/mcp` and send `Authorization: Bearer YOUR_MCP_TOKEN`.
+
+**3. Ask.** For example: "Check how visible Forkful is for 'best meal kit for busy families' in the UK, competitors Greenplate and Hearthbox, site forkful.com."
+
+Good to know:
+
+- `check_visibility` takes 30 to 240 seconds, because it waits for the slowest engine. Each engine gets 240 seconds; one that runs out comes back as an error and the others still return. On Vercel the route stops at 300 seconds (`maxDuration`), so keep the default there. On your own server you can raise it with `MCP_ENGINE_TIMEOUT_MS`.
+- Clients that send a progress token get a progress update as each engine finishes.
+- Results stay out of the dashboard. The dashboard keeps its data in your browser, which the server cannot read.
+- On a demo deploy (`NEXT_PUBLIC_DEMO_ONLY=true`) `/api/mcp` answers 403 like every other API route.
+
 ## API Routes
 
 | Route | Runtime | Purpose |
@@ -287,9 +324,10 @@ By default, **all your data stays in your browser** (IndexedDB). That's great fo
 | `POST /api/serp` | Node.js | Bright Data SERP — organic search results for a keyword |
 | `POST /api/site-context` | Node.js | Homepage scrape + context extraction via OpenRouter |
 | `POST /api/unlocker` | Node.js | Bright Data Web Unlocker — single or batch URL scraping |
-| `POST /api/brightdata-platforms` | Node.js | 5-platform AI citation polling via Bright Data datasets |
+| `POST /api/brightdata-platforms` | Node.js | 4-platform AI citation polling via Bright Data datasets |
 | `POST /api/bulk-sro` | Node.js | SSE streaming — bulk SRO analysis across multiple keywords |
 | `POST /api/rank-signal` | Node.js | SSE streaming — Rank Signal paired A/B trials for one signal (GET returns signals + allowed judge models) |
+| `POST /api/mcp` | Node.js | Remote MCP server (Streamable HTTP, stateless). Needs `MCP_TOKEN` as a Bearer token; see [MCP server](#mcp-server) |
 | `GET/PUT/DELETE /api/state` | Node.js | Cloud KV store proxy — reads/writes to Supabase using service-role key (disabled when cloud not configured) |
 
 All routes include input validation and error handling. Most routes use in-memory caching to minimize API costs.
@@ -317,7 +355,12 @@ All routes include input validation and error handling. Most routes use in-memor
 The software is free under the MIT license. Bright Data, OpenRouter and Gemini bill per API call, so your cost depends on how many prompts and engines you run.
 
 ### Which AI engines does it track?
-It tracks 5 engines: ChatGPT, Perplexity, Gemini, Microsoft Copilot and Google AI Mode. Grok was removed in v1.5.0.
+It tracks the 4 engines Bright Data runs an AI scraper for: ChatGPT, Perplexity, Gemini and Google AI Mode. Copilot was removed in v1.7.0 because Bright Data retired its Copilot scraper. Grok was removed in v1.5.0, and Bright Data has listed its Grok scraper as unavailable since June 2026.
+
+On 10 November 2026 Bright Data listed its Perplexity scraper as temporarily unavailable. Perplexity runs return an error until Bright Data restores it. Outages are posted in the [Bright Data release notes](https://docs.brightdata.com/release-notes).
+
+### Does it have an MCP server?
+Yes. Set `MCP_TOKEN` and your deploy serves an MCP endpoint at `/api/mcp` with four tools: `list_engines`, `check_visibility`, `google_serp` and `audit_page`. Setup is in [MCP server](#mcp-server).
 
 ### Where is my data stored?
 Results are stored in your browser (IndexedDB) by default. You can sync them to your own Supabase project. Prompts are sent to Bright Data and OpenRouter to collect and analyze the AI answers.
@@ -329,7 +372,7 @@ Yes, for live tracking: set `BRIGHT_DATA_KEY`. Without it the dashboard shows a 
 Yes. The Automation tab has an in-app scheduler (hourly, every 6 hours, every 12 hours or daily) that runs while the browser tab is open, and explains how to set up Vercel Cron or GitHub Actions for unattended runs.
 
 ### Is there an open-source AI visibility tracker?
-Yes. GEO/AEO Tracker is MIT licensed and self-hosted. It tracks 5 engines, scores your visibility from 0 to 100, and shows citations and competitor battlecards. Paid plans are in [How it compares](#how-it-compares).
+Yes. GEO/AEO Tracker is MIT licensed and self-hosted. It tracks 4 engines, scores your visibility from 0 to 100, and shows citations and competitor battlecards. Paid plans are in [How it compares](#how-it-compares).
 
 ## For AI agents and LLMs
 

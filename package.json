@@ -1,6 +1,6 @@
 {
   "name": "llm-tracker",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@supabase/supabase-js": "^2.103.3",
     "idb-keyval": "^6.2.2",
     "next": "^16.4.2",

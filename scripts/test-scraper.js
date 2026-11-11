@@ -5,7 +5,6 @@
 const providerEnv = [
   ["chatgpt", "BRIGHT_DATA_DATASET_CHATGPT", "gd_m7aof0k82r803d5bjm"],
   ["perplexity", "BRIGHT_DATA_DATASET_PERPLEXITY", "gd_m7dhdot1vw9a7gc1n"],
-  ["copilot", "BRIGHT_DATA_DATASET_COPILOT", "gd_m7di5jy6s9geokz8w"],
   ["gemini", "BRIGHT_DATA_DATASET_GEMINI", "gd_mbz66arm2mf9cu856y"],
   ["google_ai", "BRIGHT_DATA_DATASET_GOOGLE_AI", "gd_mcswdt6z2elth3zqr2"],
 ];
@@ -13,7 +12,6 @@ const providerEnv = [
 const providerBaseUrl = {
   chatgpt: "https://chatgpt.com/",
   perplexity: "https://www.perplexity.ai/",
-  copilot: "https://copilot.microsoft.com/",
   gemini: "https://gemini.google.com/",
   google_ai: "https://www.google.com/",
 };

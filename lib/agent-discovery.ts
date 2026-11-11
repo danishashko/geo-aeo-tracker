@@ -98,7 +98,7 @@ export function wantsMarkdown(accept: string | null | undefined): boolean {
 }
 
 const SUMMARY =
-  "Open-source, local-first dashboard that tracks how 5 AI models (ChatGPT, Perplexity, Gemini, Copilot and Google AI Mode) mention your brand. Self-hosted, MIT licensed, bring your own API keys.";
+  "Open-source, local-first dashboard that tracks how 4 AI models (ChatGPT, Perplexity, Gemini and Google AI Mode) mention your brand. Self-hosted, MIT licensed, bring your own API keys.";
 
 const FEATURE_TABS: Array<[string, string]> = [
   [
@@ -144,11 +144,12 @@ const FEATURE_TABS: Array<[string, string]> = [
 ];
 
 const CAPABILITIES = [
-  "Multi-model tracking across ChatGPT, Perplexity, Gemini, Copilot, and Google AI Mode",
+  "Multi-model tracking across ChatGPT, Perplexity, Gemini and Google AI Mode",
   'Geo-scoped tracking: run visibility checks by country and compare markets, with a "visibility by country" breakdown',
   "SRO Analysis: multi-stage pipeline scoring how well your page is optimized for AI search results",
   "Rank Signal: paired A/B tests inside the SRO tab that measure whether one text feature (a number, a named source, a freshness clause) changes which passage a model picks",
   "Visibility scoring (0 to 100): brand mentions, position, frequency, citations, sentiment",
+  "MCP server: agents check brand visibility, pull Google results and audit pages through /api/mcp on your own deploy (token-gated)",
   "Drift alerts: automatic notifications when your score changes significantly",
   "Scheduled auto-runs: configurable interval-based batch scraping",
   "Batch runs: every prompt × engine combo, 4 at a time to stay inside the rate limit",
@@ -289,7 +290,7 @@ export function llmsFullTxt(origin: string): string {
     "",
     `> ${SUMMARY}`,
     "",
-    "GEO/AEO Tracker is a dashboard that shows whether AI models mention your brand. It sends prompts you write to 5 AI models (ChatGPT, Perplexity, Gemini, Copilot and Google AI Mode) and scores your visibility from 0 to 100 from brand mentions, position, frequency, citations and sentiment. It is for marketers, SEO leads and founders who want GEO and AEO (generative and answer engine optimization) data. You run it yourself with your own API keys and results stay in your browser by default. The software is free under the MIT license. You pay Bright Data, OpenRouter and Gemini only for the calls you make.",
+    "GEO/AEO Tracker is a dashboard that shows whether AI models mention your brand. It sends prompts you write to 4 AI models (ChatGPT, Perplexity, Gemini and Google AI Mode) and scores your visibility from 0 to 100 from brand mentions, position, frequency, citations and sentiment. It is for marketers, SEO leads and founders who want GEO and AEO (generative and answer engine optimization) data. You run it yourself with your own API keys and results stay in your browser by default. The software is free under the MIT license. You pay Bright Data, OpenRouter and Gemini only for the calls you make.",
     "",
     `Source: ${REPO_URL} (MIT license). Live demo: ${origin}/demo`,
     "",
@@ -298,7 +299,7 @@ export function llmsFullTxt(origin: string): string {
     "AI models are replacing traditional search for millions of queries. If your brand isn't visible in ChatGPT, Perplexity, or Gemini responses, you're invisible to a growing audience.",
     "",
     "- BYOK (Bring Your Own Keys): results are stored in your browser by default",
-    "- 5 AI models tracked in parallel",
+    "- 4 AI models tracked in parallel",
     "- Free MIT-licensed software: you pay only the API providers, per call",
     "- Local-first by default: IndexedDB + localStorage, no external database",
     "- Optional cloud sync via your own Supabase project (free tier) for multi-device access",

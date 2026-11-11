@@ -76,7 +76,6 @@ const PROVIDERS: Provider[] = [
   "chatgpt",
   "perplexity",
   "gemini",
-  "copilot",
   "google_ai",
 ];
 
@@ -580,7 +579,6 @@ export const DEMO_STATE: AppState = {
     "chatgpt",
     "perplexity",
     "gemini",
-    "copilot",
     "google_ai",
   ],
   country: "US",

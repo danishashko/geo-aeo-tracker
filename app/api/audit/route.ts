@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fetchWithTimeout } from "@/lib/server/http";
 import { assertPublicHttpUrl } from "@/lib/server/ssrf";
 import { AI_CRAWLERS, isAllowed, parseRobots } from "@/lib/server/robots";
+import { checkBluf } from "@/lib/server/bluf";
 
 export const runtime = "nodejs";
 
@@ -143,7 +144,9 @@ export async function POST(req: NextRequest) {
     const blockedCrawlers = AI_CRAWLERS.filter(
       (c) => robotsReadable && !isAllowed(robotsGroups, c.token, pagePath),
     );
-    const blockedAnswer = blockedCrawlers.filter((c) => c.purpose === "answers");
+    const blockedAnswer = blockedCrawlers.filter(
+      (c) => c.purpose === "answers",
+    );
     const blockedTraining = blockedCrawlers.filter(
       (c) => c.purpose === "training",
     );
@@ -312,27 +315,15 @@ export async function POST(req: NextRequest) {
     // ═══════════════════════════════════════════════════
 
     // 10. BLUF / Direct-Answer Style
-    const firstChunkLen = Math.max(plain.length * 0.2, 400);
-    const firstChunk = plain.slice(0, Math.floor(firstChunkLen));
-    const bulletCount = (html.match(/<li\b/gi) ?? []).length;
-    const hasDirectAnswer =
-      /\b(in short|tl;dr|summary|key takeaways|bottom line|the answer is|here('?s| is) (what|how|why))\b/i.test(
-        firstChunk,
-      );
-    const blufScore = Math.min(
-      1,
-      (Number(hasDirectAnswer) +
-        Number(bulletCount > 3) +
-        Number(firstChunk.length > 100)) /
-        2,
-    );
+    const bluf = checkBluf(plain, html);
+    const blufScore = bluf.density;
     checks.push({
       id: "bluf_style",
       label: "BLUF / Direct-Answer Style",
       category: "content",
-      pass: blufScore >= 0.5,
-      value: `${Math.round(blufScore * 100)}%`,
-      detail: hasDirectAnswer
+      pass: bluf.pass,
+      value: bluf.directAnswer ? `"${bluf.directAnswer}"` : "None found",
+      detail: bluf.pass
         ? "Content leads with a direct answer \u2014 good for AI citation."
         : "Content doesn\u2019t lead with a clear direct answer. Start with a BLUF (Bottom Line Up Front) statement.",
     });
@@ -577,7 +568,7 @@ export async function POST(req: NextRequest) {
       pass: {
         llmsTxt: llmsRes.ok,
         schema: schemaMentions > 0,
-        bluf: blufScore >= 0.5,
+        bluf: bluf.pass,
       },
     });
   } catch (error) {

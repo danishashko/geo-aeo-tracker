@@ -33,8 +33,7 @@ export type SROPlatform =
   | "ai_mode"
   | "gemini"
   | "chatgpt"
-  | "perplexity"
-  | "copilot";
+  | "perplexity";
 
 export interface PlatformConfig {
   id: SROPlatform;

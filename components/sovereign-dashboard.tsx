@@ -1333,7 +1333,7 @@ Requirements:
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            prompt: `${brandCtx}You are an AI search visibility analyst. Analyze how AI models (ChatGPT, Perplexity, Gemini, Copilot, Google AI) likely perceive the competitor "${name}".
+            prompt: `${brandCtx}You are an AI search visibility analyst. Analyze how AI models (ChatGPT, Perplexity, Gemini, Google AI) likely perceive the competitor "${name}".
 
 Return ONE JSON object with:
 - "competitor": "${name}"

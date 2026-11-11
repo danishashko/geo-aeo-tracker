@@ -147,7 +147,6 @@ const DEMO_SRO_RESULT: SROState = {
     demoPlatform("chatgpt", "ChatGPT", true, 5),
     demoPlatform("perplexity", "Perplexity", true, 4),
     demoPlatform("gemini", "Gemini", false, 3),
-    demoPlatform("copilot", "Copilot", true, 3),
     demoPlatform("ai_mode", "Google AI Mode", false, 6),
   ],
   serp: {
@@ -259,7 +258,7 @@ const DEMO_SRO_RESULT: SROState = {
   llmAnalysis: {
     overallScore: 72,
     summary:
-      "Your comparison page is cited by ChatGPT, Perplexity, and Copilot for this query and ranks #4 organically, but Gemini and Google AI Mode aren't picking it up. Selection rate is moderate (15.9%) — the page is referenced but isn't the dominant source. Tightening the answer-first framing and adding a structured comparison table should lift Gemini and AI-Mode pickup.",
+      "Your comparison page is cited by ChatGPT and Perplexity for this query and ranks #4 organically, but Gemini and Google AI Mode aren't picking it up. Selection rate is moderate (15.9%) — the page is referenced but isn't the dominant source. Tightening the answer-first framing and adding a structured comparison table should lift Gemini and AI-Mode pickup.",
     recommendations: [
       {
         category: "content",

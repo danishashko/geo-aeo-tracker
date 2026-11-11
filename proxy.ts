@@ -27,6 +27,8 @@ const LIMITS: Record<string, { limit: number; windowMs: number }> = {
   "/api/brightdata-platforms": { limit: 12, windowMs: 60_000 },
   "/api/sro-analyze": { limit: 20, windowMs: 60_000 },
   "/api/rank-signal": { limit: 6, windowMs: 60_000 },
+  // Token-gated, but one check_visibility call fans out to every AI engine.
+  "/api/mcp": { limit: 30, windowMs: 60_000 },
 };
 const DEFAULT_LIMIT = { limit: 30, windowMs: 60_000 };
 

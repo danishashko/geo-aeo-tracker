@@ -42,13 +42,6 @@ export const PLATFORMS: PlatformConfig[] = [
     targetUrl: "https://www.perplexity.ai",
     defaultDatasetId: "gd_m7dhdot1vw9a7gc1n",
   },
-  {
-    id: "copilot",
-    label: "Copilot",
-    datasetEnvVar: "BRIGHT_DATA_DATASET_COPILOT",
-    targetUrl: "https://copilot.microsoft.com",
-    defaultDatasetId: "gd_m7di5jy6s9geokz8w",
-  },
 ];
 
 function getApiKey(): string {

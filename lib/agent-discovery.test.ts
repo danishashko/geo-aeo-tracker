@@ -152,7 +152,7 @@ test("llms-full: first 150 words say what it is and who it is for", () => {
   assert.match(first, /dashboard/);
   assert.match(
     first,
-    /ChatGPT, Perplexity, Gemini, Copilot and Google AI Mode/,
+    /ChatGPT, Perplexity, Gemini and Google AI Mode/,
   );
   assert.match(first, /marketers, SEO leads and founders/);
 });

@@ -343,7 +343,15 @@ export BRIGHT_DATA_KEY=your_key
 **Check your brand in AI answers** (ChatGPT, Perplexity, Gemini and Google AI Mode in parallel, scored like the dashboard):
 
 ```bash
-npx geo-aeo-tracker check "best crm for startups" --brand Acme --competitor HubSpot,Pipedrive --website acme.com
+npx geo-aeo-tracker check "What is the best CRM for a small business?" --brand HubSpot --competitor Salesforce,Pipedrive,Zoho --website hubspot.com
+```
+
+```
+ChatGPT         100  mentioned, positive, site cited, 5 sources, competitors: Pipedrive, Zoho
+Gemini          60   mentioned, positive, 14 sources, competitors: Pipedrive, Zoho
+Google AI Mode  93   mentioned, positive, site cited, 7 sources, competitors: Pipedrive, Zoho
+
+Average visibility: 84  (3 of 3 engines answered)
 ```
 
 **Run a GEO/AEO audit on any page** (llms.txt, AI crawler access, Schema.org, answer-first content, headings; free):

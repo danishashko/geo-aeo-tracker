@@ -11,7 +11,17 @@ export BRIGHT_DATA_KEY=your_key
 ## Track your brand in AI answers
 
 ```bash
-npx geo-aeo-tracker check "best crm for startups" --brand Acme --competitor HubSpot,Pipedrive --website acme.com
+npx geo-aeo-tracker check "What is the best CRM for a small business?" --brand HubSpot --competitor Salesforce,Pipedrive,Zoho --website hubspot.com
+```
+
+A real run (11 Nov 2026, Perplexity left out during a Bright Data outage):
+
+```
+ChatGPT         100  mentioned, positive, site cited, 5 sources, competitors: Pipedrive, Zoho
+Gemini          60   mentioned, positive, 14 sources, competitors: Pipedrive, Zoho
+Google AI Mode  93   mentioned, positive, site cited, 7 sources, competitors: Pipedrive, Zoho
+
+Average visibility: 84  (3 of 3 engines answered)
 ```
 
 Each engine gets a visibility score from 0 to 100 (mentions, position and whether your site is cited), plus sentiment and the competitors it named. Engines run in parallel; a run takes 1 to 5 minutes and bills Bright Data once per engine.
